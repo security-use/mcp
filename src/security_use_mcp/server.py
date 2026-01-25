@@ -13,10 +13,10 @@ from mcp.types import TextContent, Tool
 
 # Import handlers
 from .handlers import (
-    handle_scan_dependencies,
-    handle_fix_vulnerability,
-    handle_scan_iac,
     handle_fix_iac,
+    handle_fix_vulnerability,
+    handle_scan_dependencies,
+    handle_scan_iac,
 )
 
 # Initialize the MCP server
@@ -53,7 +53,7 @@ async def list_tools() -> list[Tool]:
             description=(
                 "Scan Infrastructure as Code files for security misconfigurations. "
                 "Supports Terraform (.tf), CloudFormation (.yaml/.json), and other IaC formats. "
-                "Detects issues like open S3 buckets, overly permissive IAM, missing encryption, etc."
+                "Detects issues like open S3 buckets, overly permissive IAM, missing encryption."
             ),
             inputSchema={
                 "type": "object",

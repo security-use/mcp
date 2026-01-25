@@ -1,7 +1,8 @@
 """Tests for the MCP server."""
 
 import pytest
-from security_use_mcp.server import server, list_tools
+
+from security_use_mcp.server import list_tools
 
 
 @pytest.mark.asyncio

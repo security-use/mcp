@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Any
 
 from mcp.types import TextContent
-
 from security_use.dependency_scanner import DependencyScanner
 from security_use.models import ScanResult
 

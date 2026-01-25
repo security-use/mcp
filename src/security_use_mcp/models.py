@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
 
 
 class Severity(str, Enum):
@@ -23,8 +22,8 @@ class Vulnerability:
     installed_version: str
     severity: Severity
     description: str
-    cve_id: Optional[str] = None
-    fixed_version: Optional[str] = None
+    cve_id: str | None = None
+    fixed_version: str | None = None
     remediation: str = ""
     vulnerable_range: str = ""
     references: list[str] = field(default_factory=list)
@@ -38,7 +37,7 @@ class DependencyScanResult:
     scanned_files: list[str] = field(default_factory=list)
     total_dependencies: int = 0
     scan_duration_ms: int = 0
-    error: Optional[str] = None
+    error: str | None = None
 
 
 @dataclass
@@ -52,8 +51,8 @@ class IaCFinding:
     severity: Severity
     description: str
     remediation: str
-    resource_name: Optional[str] = None
-    resource_type: Optional[str] = None
+    resource_name: str | None = None
+    resource_type: str | None = None
     code_snippet: str = ""
 
 
@@ -64,7 +63,7 @@ class IaCScanResult:
     findings: list[IaCFinding] = field(default_factory=list)
     scanned_files: list[str] = field(default_factory=list)
     scan_duration_ms: int = 0
-    error: Optional[str] = None
+    error: str | None = None
 
 
 @dataclass
@@ -79,4 +78,4 @@ class FixResult:
     before: str = ""
     after: str = ""
     explanation: str = ""
-    error: Optional[str] = None
+    error: str | None = None

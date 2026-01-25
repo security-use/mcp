@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Any
 
 from mcp.types import TextContent
-
 from security_use.iac_scanner import IaCScanner
 from security_use.models import ScanResult
 
@@ -101,8 +100,9 @@ async def handle_scan_iac(arguments: dict[str, Any]) -> list[TextContent]:
                 output_lines.append(f"#### {finding.rule_id}: {finding.title}")
                 output_lines.append(f"- **File**: `{finding.file_path}:{finding.line_number}`")
                 if finding.resource_name:
+                    resource_type = finding.resource_type or 'resource'
                     output_lines.append(
-                        f"- **Resource**: {finding.resource_type or 'resource'}.{finding.resource_name}"
+                        f"- **Resource**: {resource_type}.{finding.resource_name}"
                     )
                 output_lines.append(f"- **Description**: {finding.description}")
                 output_lines.append(f"- **Remediation**: {finding.remediation}")
@@ -204,12 +204,13 @@ async def handle_fix_iac(arguments: dict[str, Any]) -> list[TextContent]:
 
         if not result.success:
             error_msg = result.error or "Unknown error occurred"
-            return [
-                TextContent(
-                    type="text",
-                    text=f"## Fix Generation Failed\n\n**Rule**: {rule_id}\n**File**: {file_path}\n**Error**: {error_msg}",
-                )
-            ]
+            error_text = (
+                f"## Fix Generation Failed\n\n"
+                f"**Rule**: {rule_id}\n"
+                f"**File**: {file_path}\n"
+                f"**Error**: {error_msg}"
+            )
+            return [TextContent(type="text", text=error_text)]
 
         if auto_apply:
             # Fix was applied automatically

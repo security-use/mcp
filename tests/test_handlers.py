@@ -1,10 +1,10 @@
 """Tests for tool handlers."""
 
-import pytest
 from unittest.mock import MagicMock, patch
-import os
 
-from security_use.models import ScanResult, Vulnerability, IaCFinding, Severity
+import pytest
+from security_use.models import IaCFinding, ScanResult, Severity, Vulnerability
+
 from security_use_mcp.models import FixResult
 
 
@@ -86,10 +86,10 @@ class TestDependencyHandler:
         with patch("os.path.exists", return_value=True):
             with patch(
                 "security_use.fixers.dependency_fixer.DependencyFixer"
-            ) as MockFixer:
+            ) as mock_fixer_cls:
                 mock_fixer_instance = MagicMock()
                 mock_fixer_instance.fix = MagicMock(return_value=mock_result)
-                MockFixer.return_value = mock_fixer_instance
+                mock_fixer_cls.return_value = mock_fixer_instance
 
                 result = await handle_fix_vulnerability({
                     "package_name": "requests",
@@ -183,10 +183,10 @@ class TestIaCHandler:
         )
 
         with patch("os.path.exists", return_value=True):
-            with patch("security_use.fixers.iac_fixer.IaCFixer") as MockFixer:
+            with patch("security_use.fixers.iac_fixer.IaCFixer") as mock_fixer_cls:
                 mock_fixer_instance = MagicMock()
                 mock_fixer_instance.fix = MagicMock(return_value=mock_result)
-                MockFixer.return_value = mock_fixer_instance
+                mock_fixer_cls.return_value = mock_fixer_instance
 
                 result = await handle_fix_iac({
                     "file_path": "s3.tf",
@@ -211,10 +211,10 @@ class TestIaCHandler:
         )
 
         with patch("os.path.exists", return_value=True):
-            with patch("security_use.fixers.iac_fixer.IaCFixer") as MockFixer:
+            with patch("security_use.fixers.iac_fixer.IaCFixer") as mock_fixer_cls:
                 mock_fixer_instance = MagicMock()
                 mock_fixer_instance.fix = MagicMock(return_value=mock_result)
-                MockFixer.return_value = mock_fixer_instance
+                mock_fixer_cls.return_value = mock_fixer_instance
 
                 result = await handle_fix_iac({
                     "file_path": "s3.tf",
