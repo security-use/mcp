@@ -5,29 +5,22 @@ via the Model Context Protocol (MCP). It integrates with Cursor and other
 MCP-compatible clients.
 """
 
-import asyncio
-import json
-import os
 from typing import Any
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import TextContent, Tool
 
-# Import security-use scanners
-from security_use.scanners.dependency_scanner import DependencyScanner
-from security_use.scanners.iac_scanner import IaCScanner
-from security_use.fixers.dependency_fixer import DependencyFixer
-from security_use.fixers.iac_fixer import IaCFixer
+# Import handlers
+from .handlers import (
+    handle_scan_dependencies,
+    handle_fix_vulnerability,
+    handle_scan_iac,
+    handle_fix_iac,
+)
 
 # Initialize the MCP server
 server = Server("security-use-mcp")
-
-# Initialize scanners and fixers
-dependency_scanner = DependencyScanner()
-iac_scanner = IaCScanner()
-dependency_fixer = DependencyFixer()
-iac_fixer = IaCFixer()
 
 
 @server.list_tools()
@@ -80,7 +73,8 @@ async def list_tools() -> list[Tool]:
             name="fix_vulnerability",
             description=(
                 "Fix a detected dependency vulnerability by updating to a safe version. "
-                "Modifies requirements.txt or pyproject.toml with the patched version."
+                "Modifies requirements.txt or pyproject.toml with the patched version. "
+                "Returns a diff of changes for review."
             ),
             inputSchema={
                 "type": "object",
@@ -111,7 +105,8 @@ async def list_tools() -> list[Tool]:
             name="fix_iac",
             description=(
                 "Fix an Infrastructure as Code security misconfiguration. "
-                "Can either suggest a fix or apply it automatically."
+                "Can either suggest a fix (default) or apply it automatically. "
+                "Returns before/after code for review."
             ),
             inputSchema={
                 "type": "object",
@@ -145,194 +140,18 @@ async def list_tools() -> list[Tool]:
 @server.call_tool()
 async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
     """Handle tool invocations."""
-    if name == "scan_dependencies":
-        return await handle_scan_dependencies(arguments)
-    elif name == "scan_iac":
-        return await handle_scan_iac(arguments)
-    elif name == "fix_vulnerability":
-        return await handle_fix_vulnerability(arguments)
-    elif name == "fix_iac":
-        return await handle_fix_iac(arguments)
+    handlers = {
+        "scan_dependencies": handle_scan_dependencies,
+        "scan_iac": handle_scan_iac,
+        "fix_vulnerability": handle_fix_vulnerability,
+        "fix_iac": handle_fix_iac,
+    }
+
+    handler = handlers.get(name)
+    if handler:
+        return await handler(arguments)
     else:
         return [TextContent(type="text", text=f"Unknown tool: {name}")]
-
-
-async def handle_scan_dependencies(arguments: dict[str, Any]) -> list[TextContent]:
-    """Scan for dependency vulnerabilities."""
-    path = arguments.get("path", os.getcwd())
-
-    try:
-        results = await asyncio.to_thread(dependency_scanner.scan, path)
-
-        if not results.vulnerabilities:
-            return [
-                TextContent(
-                    type="text",
-                    text="No dependency vulnerabilities found. Your dependencies are secure.",
-                )
-            ]
-
-        # Format results for AI consumption
-        output_lines = [
-            f"Found {len(results.vulnerabilities)} dependency vulnerabilities:\n"
-        ]
-
-        for i, vuln in enumerate(results.vulnerabilities, 1):
-            output_lines.append(f"## {i}. {vuln.package_name} ({vuln.installed_version})")
-            output_lines.append(f"   - **Severity**: {vuln.severity}")
-            output_lines.append(f"   - **CVE**: {vuln.cve_id or 'N/A'}")
-            output_lines.append(f"   - **Description**: {vuln.description}")
-            output_lines.append(f"   - **Fixed in**: {vuln.fixed_version or 'No fix available'}")
-            output_lines.append(f"   - **Remediation**: {vuln.remediation}")
-            output_lines.append("")
-
-        output_lines.append("\n**Recommended Action**: Use the `fix_vulnerability` tool to update vulnerable packages.")
-
-        return [TextContent(type="text", text="\n".join(output_lines))]
-
-    except Exception as e:
-        return [TextContent(type="text", text=f"Error scanning dependencies: {str(e)}")]
-
-
-async def handle_scan_iac(arguments: dict[str, Any]) -> list[TextContent]:
-    """Scan for IaC security misconfigurations."""
-    path = arguments.get("path", os.getcwd())
-
-    try:
-        results = await asyncio.to_thread(iac_scanner.scan, path)
-
-        if not results.findings:
-            return [
-                TextContent(
-                    type="text",
-                    text="No IaC security issues found. Your infrastructure code follows security best practices.",
-                )
-            ]
-
-        # Format results for AI consumption
-        output_lines = [
-            f"Found {len(results.findings)} IaC security issues:\n"
-        ]
-
-        for i, finding in enumerate(results.findings, 1):
-            output_lines.append(f"## {i}. {finding.rule_id}: {finding.title}")
-            output_lines.append(f"   - **File**: {finding.file_path}:{finding.line_number}")
-            output_lines.append(f"   - **Severity**: {finding.severity}")
-            output_lines.append(f"   - **Resource**: {finding.resource_name or 'N/A'}")
-            output_lines.append(f"   - **Description**: {finding.description}")
-            output_lines.append(f"   - **Remediation**: {finding.remediation}")
-            output_lines.append("")
-
-        output_lines.append("\n**Recommended Action**: Use the `fix_iac` tool to apply fixes, or review and fix manually.")
-
-        return [TextContent(type="text", text="\n".join(output_lines))]
-
-    except Exception as e:
-        return [TextContent(type="text", text=f"Error scanning IaC files: {str(e)}")]
-
-
-async def handle_fix_vulnerability(arguments: dict[str, Any]) -> list[TextContent]:
-    """Fix a dependency vulnerability."""
-    package_name = arguments.get("package_name")
-    target_version = arguments.get("target_version")
-    path = arguments.get("path", os.getcwd())
-
-    if not package_name:
-        return [TextContent(type="text", text="Error: package_name is required")]
-
-    try:
-        result = await asyncio.to_thread(
-            dependency_fixer.fix,
-            path=path,
-            package_name=package_name,
-            target_version=target_version,
-        )
-
-        if not result.success:
-            return [TextContent(type="text", text=f"Failed to fix vulnerability: {result.error}")]
-
-        # Format the result
-        output_lines = [
-            f"Successfully updated {package_name}:\n",
-            f"- **Previous version**: {result.old_version}",
-            f"- **New version**: {result.new_version}",
-            f"- **File modified**: {result.file_modified}",
-            "",
-            "**Changes made**:",
-            "```diff",
-            result.diff,
-            "```",
-            "",
-            "Please review the changes and run your tests to ensure compatibility.",
-        ]
-
-        return [TextContent(type="text", text="\n".join(output_lines))]
-
-    except Exception as e:
-        return [TextContent(type="text", text=f"Error fixing vulnerability: {str(e)}")]
-
-
-async def handle_fix_iac(arguments: dict[str, Any]) -> list[TextContent]:
-    """Fix an IaC security issue."""
-    file_path = arguments.get("file_path")
-    line_number = arguments.get("line_number")
-    rule_id = arguments.get("rule_id")
-    auto_apply = arguments.get("auto_apply", False)
-
-    if not file_path or not rule_id:
-        return [TextContent(type="text", text="Error: file_path and rule_id are required")]
-
-    try:
-        result = await asyncio.to_thread(
-            iac_fixer.fix,
-            file_path=file_path,
-            line_number=line_number,
-            rule_id=rule_id,
-            auto_apply=auto_apply,
-        )
-
-        if not result.success:
-            return [TextContent(type="text", text=f"Failed to generate fix: {result.error}")]
-
-        if auto_apply:
-            output_lines = [
-                f"Successfully applied fix for {rule_id}:\n",
-                f"- **File**: {file_path}",
-                f"- **Rule**: {rule_id}",
-                "",
-                "**Changes applied**:",
-                "```diff",
-                result.diff,
-                "```",
-                "",
-                "Please review the changes to ensure they meet your requirements.",
-            ]
-        else:
-            output_lines = [
-                f"Suggested fix for {rule_id}:\n",
-                f"- **File**: {file_path}",
-                f"- **Line**: {line_number or 'N/A'}",
-                f"- **Rule**: {rule_id}",
-                "",
-                "**Before**:",
-                "```",
-                result.before,
-                "```",
-                "",
-                "**After (suggested)**:",
-                "```",
-                result.after,
-                "```",
-                "",
-                "**Explanation**: " + result.explanation,
-                "",
-                "To apply this fix automatically, call `fix_iac` with `auto_apply: true`.",
-            ]
-
-        return [TextContent(type="text", text="\n".join(output_lines))]
-
-    except Exception as e:
-        return [TextContent(type="text", text=f"Error fixing IaC issue: {str(e)}")]
 
 
 def main():
