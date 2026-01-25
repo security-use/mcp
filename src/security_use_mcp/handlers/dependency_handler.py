@@ -2,18 +2,18 @@
 
 import asyncio
 import os
+from pathlib import Path
 from typing import Any
 
 from mcp.types import TextContent
 
-from security_use.scanners.dependency_scanner import DependencyScanner
-from security_use.fixers.dependency_fixer import DependencyFixer
+from security_use.dependency_scanner import DependencyScanner
+from security_use.models import ScanResult
 
-from ..models import DependencyScanResult, FixResult
+from ..models import FixResult
 
-# Initialize scanner and fixer
+# Initialize scanner
 _scanner = DependencyScanner()
-_fixer = DependencyFixer()
 
 
 async def handle_scan_dependencies(arguments: dict[str, Any]) -> list[TextContent]:
@@ -37,10 +37,11 @@ async def handle_scan_dependencies(arguments: dict[str, Any]) -> list[TextConten
 
     try:
         # Run scanner in thread pool to avoid blocking
-        result: DependencyScanResult = await asyncio.to_thread(_scanner.scan, path)
+        result: ScanResult = await asyncio.to_thread(_scanner.scan_path, Path(path))
 
-        if result.error:
-            return [TextContent(type="text", text=f"Scan error: {result.error}")]
+        if result.errors:
+            error_msg = "; ".join(result.errors)
+            return [TextContent(type="text", text=f"Scan error: {error_msg}")]
 
         if not result.vulnerabilities:
             summary = [
@@ -49,8 +50,6 @@ async def handle_scan_dependencies(arguments: dict[str, Any]) -> list[TextConten
                 "**Status**: No vulnerabilities found",
                 "",
                 f"- **Scanned files**: {', '.join(result.scanned_files) or 'None found'}",
-                f"- **Total dependencies**: {result.total_dependencies}",
-                f"- **Scan duration**: {result.scan_duration_ms}ms",
                 "",
                 "Your project dependencies are secure.",
             ]
@@ -63,38 +62,34 @@ async def handle_scan_dependencies(arguments: dict[str, Any]) -> list[TextConten
             f"**Found {len(result.vulnerabilities)} vulnerabilities**",
             "",
             f"- **Scanned files**: {', '.join(result.scanned_files)}",
-            f"- **Total dependencies**: {result.total_dependencies}",
-            f"- **Scan duration**: {result.scan_duration_ms}ms",
             "",
             "---",
             "",
         ]
 
         # Group by severity
-        by_severity = {"critical": [], "high": [], "medium": [], "low": [], "unknown": []}
+        by_severity = {"CRITICAL": [], "HIGH": [], "MEDIUM": [], "LOW": [], "UNKNOWN": []}
         for vuln in result.vulnerabilities:
             by_severity[vuln.severity.value].append(vuln)
 
         # Output in severity order
-        for severity in ["critical", "high", "medium", "low", "unknown"]:
+        for severity in ["CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"]:
             vulns = by_severity[severity]
             if not vulns:
                 continue
 
-            output_lines.append(f"### {severity.upper()} ({len(vulns)})")
+            output_lines.append(f"### {severity} ({len(vulns)})")
             output_lines.append("")
 
             for vuln in vulns:
-                output_lines.append(f"#### {vuln.package_name} ({vuln.installed_version})")
-                if vuln.cve_id:
-                    output_lines.append(f"- **CVE**: {vuln.cve_id}")
-                output_lines.append(f"- **Vulnerable range**: {vuln.vulnerable_range or 'N/A'}")
+                output_lines.append(f"#### {vuln.package} ({vuln.installed_version})")
+                output_lines.append(f"- **ID**: {vuln.id}")
+                output_lines.append(f"- **Title**: {vuln.title}")
+                output_lines.append(f"- **Affected versions**: {vuln.affected_versions or 'N/A'}")
                 output_lines.append(
                     f"- **Fixed in**: {vuln.fixed_version or 'No fix available'}"
                 )
                 output_lines.append(f"- **Description**: {vuln.description}")
-                if vuln.remediation:
-                    output_lines.append(f"- **Remediation**: {vuln.remediation}")
                 if vuln.references:
                     output_lines.append(f"- **References**: {', '.join(vuln.references[:3])}")
                 output_lines.append("")
@@ -158,6 +153,10 @@ async def handle_fix_vulnerability(arguments: dict[str, Any]) -> list[TextConten
         return [TextContent(type="text", text=f"Error: Path does not exist: {path}")]
 
     try:
+        # Import fixer lazily
+        from security_use.fixers.dependency_fixer import DependencyFixer
+        _fixer = DependencyFixer()
+
         result: FixResult = await asyncio.to_thread(
             _fixer.fix,
             path=path,

@@ -2,18 +2,18 @@
 
 import asyncio
 import os
+from pathlib import Path
 from typing import Any
 
 from mcp.types import TextContent
 
-from security_use.scanners.iac_scanner import IaCScanner
-from security_use.fixers.iac_fixer import IaCFixer
+from security_use.iac_scanner import IaCScanner
+from security_use.models import ScanResult
 
-from ..models import IaCScanResult, FixResult
+from ..models import FixResult
 
-# Initialize scanner and fixer
+# Initialize scanner
 _scanner = IaCScanner()
-_fixer = IaCFixer()
 
 
 async def handle_scan_iac(arguments: dict[str, Any]) -> list[TextContent]:
@@ -46,19 +46,19 @@ async def handle_scan_iac(arguments: dict[str, Any]) -> list[TextContent]:
 
     try:
         # Run scanner in thread pool to avoid blocking
-        result: IaCScanResult = await asyncio.to_thread(_scanner.scan, path)
+        result: ScanResult = await asyncio.to_thread(_scanner.scan_path, Path(path))
 
-        if result.error:
-            return [TextContent(type="text", text=f"Scan error: {result.error}")]
+        if result.errors:
+            error_msg = "; ".join(result.errors)
+            return [TextContent(type="text", text=f"Scan error: {error_msg}")]
 
-        if not result.findings:
+        if not result.iac_findings:
             summary = [
                 "## IaC Security Scan Results",
                 "",
                 "**Status**: No security issues found",
                 "",
                 f"- **Scanned files**: {len(result.scanned_files)}",
-                f"- **Scan duration**: {result.scan_duration_ms}ms",
                 "",
                 "Your infrastructure code follows security best practices.",
             ]
@@ -75,27 +75,26 @@ async def handle_scan_iac(arguments: dict[str, Any]) -> list[TextContent]:
         output_lines = [
             "## IaC Security Scan Results",
             "",
-            f"**Found {len(result.findings)} security issues**",
+            f"**Found {len(result.iac_findings)} security issues**",
             "",
             f"- **Scanned files**: {len(result.scanned_files)}",
-            f"- **Scan duration**: {result.scan_duration_ms}ms",
             "",
             "---",
             "",
         ]
 
         # Group by severity
-        by_severity = {"critical": [], "high": [], "medium": [], "low": [], "unknown": []}
-        for finding in result.findings:
+        by_severity = {"CRITICAL": [], "HIGH": [], "MEDIUM": [], "LOW": [], "UNKNOWN": []}
+        for finding in result.iac_findings:
             by_severity[finding.severity.value].append(finding)
 
         # Output in severity order
-        for severity in ["critical", "high", "medium", "low", "unknown"]:
+        for severity in ["CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"]:
             findings = by_severity[severity]
             if not findings:
                 continue
 
-            output_lines.append(f"### {severity.upper()} ({len(findings)})")
+            output_lines.append(f"### {severity} ({len(findings)})")
             output_lines.append("")
 
             for finding in findings:
@@ -107,13 +106,13 @@ async def handle_scan_iac(arguments: dict[str, Any]) -> list[TextContent]:
                     )
                 output_lines.append(f"- **Description**: {finding.description}")
                 output_lines.append(f"- **Remediation**: {finding.remediation}")
-                if finding.code_snippet:
+                if finding.fix_code:
                     output_lines.extend(
                         [
                             "",
-                            "**Problematic code**:",
+                            "**Suggested fix**:",
                             "```",
-                            finding.code_snippet,
+                            finding.fix_code,
                             "```",
                         ]
                     )
@@ -191,6 +190,10 @@ async def handle_fix_iac(arguments: dict[str, Any]) -> list[TextContent]:
         return [TextContent(type="text", text=f"Error: File does not exist: {file_path}")]
 
     try:
+        # Import fixer lazily
+        from security_use.fixers.iac_fixer import IaCFixer
+        _fixer = IaCFixer()
+
         result: FixResult = await asyncio.to_thread(
             _fixer.fix,
             file_path=file_path,
