@@ -88,16 +88,6 @@ async def handle_create_fix_pr(arguments: dict[str, Any]) -> list[TextContent]:
                 import time
                 branch_name = f"security-fix/{int(time.time())}"
 
-        # Get current branch to return to later if needed
-        current_branch_result = await asyncio.to_thread(
-            subprocess.run,
-            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-            cwd=working_dir,
-            capture_output=True,
-            text=True,
-        )
-        current_branch = current_branch_result.stdout.strip()
-
         # Create and checkout new branch
         checkout_result = await asyncio.to_thread(
             subprocess.run,

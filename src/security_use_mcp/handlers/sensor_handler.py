@@ -214,7 +214,7 @@ async def handle_acknowledge_alert(arguments: dict[str, Any]) -> list[TextConten
             "## Alert Acknowledged",
             "",
             f"**Alert ID**: {alert_id}",
-            f"**Status**: Acknowledged",
+            "**Status**: Acknowledged",
         ]
 
         if notes:
@@ -432,7 +432,7 @@ async def handle_configure_sensor(arguments: dict[str, Any]) -> list[TextContent
         if patterns:
             output_lines.append(f"**Patterns Added**: {len(patterns)}")
         if rate_limits:
-            output_lines.append(f"**Rate Limits Updated**: Yes")
+            output_lines.append("**Rate Limits Updated**: Yes")
 
         output_lines.extend(
             [
