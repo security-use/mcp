@@ -13,9 +13,15 @@ from mcp.types import TextContent, Tool
 
 # Import handlers
 from .handlers import (
+    handle_acknowledge_alert,
+    handle_block_ip,
+    handle_configure_sensor,
     handle_create_fix_pr,
     handle_fix_iac,
     handle_fix_vulnerability,
+    handle_get_alert_details,
+    handle_get_blocked_ips,
+    handle_get_security_alerts,
     handle_scan_dependencies,
     handle_scan_iac,
 )
@@ -175,6 +181,134 @@ async def list_tools() -> list[Tool]:
                 "required": [],
             },
         ),
+        Tool(
+            name="get_security_alerts",
+            description=(
+                "Retrieve recent security alerts from the runtime sensor. "
+                "Returns alerts with severity, attack type, and source information."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "time_range": {
+                        "type": "string",
+                        "description": (
+                            "Time range to query (e.g., '1h', '24h', '7d'). "
+                            "Defaults to '24h'."
+                        ),
+                    },
+                    "severity": {
+                        "type": "string",
+                        "description": "Filter by severity level (critical, high, medium, low).",
+                    },
+                    "attack_type": {
+                        "type": "string",
+                        "description": "Filter by attack type (e.g., 'sql_injection', 'xss').",
+                    },
+                },
+                "required": [],
+            },
+        ),
+        Tool(
+            name="get_alert_details",
+            description=(
+                "Get full details of a specific security alert. "
+                "Returns attack payload, source IP, and matched patterns."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "alert_id": {
+                        "type": "string",
+                        "description": "ID of the alert to retrieve.",
+                    },
+                },
+                "required": ["alert_id"],
+            },
+        ),
+        Tool(
+            name="acknowledge_alert",
+            description=(
+                "Mark a security alert as reviewed/acknowledged. "
+                "Removes the alert from active alerts list."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "alert_id": {
+                        "type": "string",
+                        "description": "ID of the alert to acknowledge.",
+                    },
+                    "notes": {
+                        "type": "string",
+                        "description": "Notes about the acknowledgment.",
+                    },
+                },
+                "required": ["alert_id"],
+            },
+        ),
+        Tool(
+            name="block_ip",
+            description=(
+                "Block a source IP address. "
+                "Adds the IP to the sensor's block list for the specified duration."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "ip_address": {
+                        "type": "string",
+                        "description": "IP address to block.",
+                    },
+                    "duration": {
+                        "type": "string",
+                        "description": (
+                            "Block duration (e.g., '1h', '24h', 'permanent'). "
+                            "Defaults to '24h'."
+                        ),
+                    },
+                },
+                "required": ["ip_address"],
+            },
+        ),
+        Tool(
+            name="get_blocked_ips",
+            description=(
+                "List all currently blocked IP addresses. "
+                "Shows IP, duration, and expiration time."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {},
+                "required": [],
+            },
+        ),
+        Tool(
+            name="configure_sensor",
+            description=(
+                "Update runtime sensor configuration. "
+                "Modify detection sensitivity, patterns, and rate limits."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "sensitivity": {
+                        "type": "string",
+                        "description": "Detection sensitivity (low, medium, high).",
+                    },
+                    "patterns": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Custom detection patterns to add.",
+                    },
+                    "rate_limits": {
+                        "type": "object",
+                        "description": "Rate limiting configuration.",
+                    },
+                },
+                "required": [],
+            },
+        ),
     ]
 
 
@@ -187,6 +321,12 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
         "fix_vulnerability": handle_fix_vulnerability,
         "fix_iac": handle_fix_iac,
         "create_fix_pr": handle_create_fix_pr,
+        "get_security_alerts": handle_get_security_alerts,
+        "get_alert_details": handle_get_alert_details,
+        "acknowledge_alert": handle_acknowledge_alert,
+        "block_ip": handle_block_ip,
+        "get_blocked_ips": handle_get_blocked_ips,
+        "configure_sensor": handle_configure_sensor,
     }
 
     handler = handlers.get(name)
