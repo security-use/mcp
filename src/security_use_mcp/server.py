@@ -13,6 +13,7 @@ from mcp.types import TextContent, Tool
 
 # Import handlers
 from .handlers import (
+    handle_create_fix_pr,
     handle_fix_iac,
     handle_fix_vulnerability,
     handle_scan_dependencies,
@@ -134,6 +135,46 @@ async def list_tools() -> list[Tool]:
                 "required": ["file_path", "rule_id"],
             },
         ),
+        Tool(
+            name="create_fix_pr",
+            description=(
+                "Create a GitHub Pull Request with security fixes. "
+                "Commits pending changes, pushes to a new branch, and opens a PR. "
+                "Use after applying fixes with fix_vulnerability or fix_iac."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "repo": {
+                        "type": "string",
+                        "description": (
+                            "Repository path or owner/name. "
+                            "Defaults to current working directory."
+                        ),
+                    },
+                    "vulnerability_id": {
+                        "type": "string",
+                        "description": "Vulnerability ID to reference in the PR.",
+                    },
+                    "iac_finding_id": {
+                        "type": "string",
+                        "description": "IaC finding ID to reference in the PR.",
+                    },
+                    "branch_name": {
+                        "type": "string",
+                        "description": (
+                            "Target branch name. "
+                            "Auto-generated if not specified."
+                        ),
+                    },
+                    "draft": {
+                        "type": "boolean",
+                        "description": "Create as draft PR. Defaults to true.",
+                    },
+                },
+                "required": [],
+            },
+        ),
     ]
 
 
@@ -145,6 +186,7 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
         "scan_iac": handle_scan_iac,
         "fix_vulnerability": handle_fix_vulnerability,
         "fix_iac": handle_fix_iac,
+        "create_fix_pr": handle_create_fix_pr,
     }
 
     handler = handlers.get(name)
