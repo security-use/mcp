@@ -15,10 +15,12 @@ from mcp.types import TextContent, Tool
 from .handlers import (
     handle_acknowledge_alert,
     handle_block_ip,
+    handle_check_compliance,
     handle_configure_sensor,
     handle_create_fix_pr,
     handle_fix_iac,
     handle_fix_vulnerability,
+    handle_generate_sbom,
     handle_get_alert_details,
     handle_get_blocked_ips,
     handle_get_security_alerts,
@@ -309,6 +311,60 @@ async def list_tools() -> list[Tool]:
                 "required": [],
             },
         ),
+        Tool(
+            name="generate_sbom",
+            description=(
+                "Generate a Software Bill of Materials (SBOM) for the project. "
+                "Supports CycloneDX and SPDX formats."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": (
+                            "Path to the project directory. "
+                            "Defaults to current working directory."
+                        ),
+                    },
+                    "format": {
+                        "type": "string",
+                        "description": (
+                            "Output format (cyclonedx, spdx). "
+                            "Defaults to cyclonedx."
+                        ),
+                    },
+                },
+                "required": [],
+            },
+        ),
+        Tool(
+            name="check_compliance",
+            description=(
+                "Check project against a compliance framework. "
+                "Supports SOC 2, HIPAA, PCI-DSS, and CIS benchmarks."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": (
+                            "Path to the project directory. "
+                            "Defaults to current working directory."
+                        ),
+                    },
+                    "framework": {
+                        "type": "string",
+                        "description": (
+                            "Compliance framework to check against. "
+                            "Options: soc2, hipaa, pci-dss, cis."
+                        ),
+                    },
+                },
+                "required": ["framework"],
+            },
+        ),
     ]
 
 
@@ -327,6 +383,8 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
         "block_ip": handle_block_ip,
         "get_blocked_ips": handle_get_blocked_ips,
         "configure_sensor": handle_configure_sensor,
+        "generate_sbom": handle_generate_sbom,
+        "check_compliance": handle_check_compliance,
     }
 
     handler = handlers.get(name)
