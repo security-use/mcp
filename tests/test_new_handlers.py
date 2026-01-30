@@ -91,14 +91,14 @@ class TestSensorHandler:
     """Tests for runtime sensor handlers."""
 
     @pytest.mark.asyncio
-    async def test_get_security_alerts_missing_module(self):
-        """Test get_security_alerts when sensor module not available."""
+    async def test_get_security_alerts_redirects_to_dashboard(self):
+        """Test get_security_alerts redirects to dashboard."""
         from security_use_mcp.handlers.sensor_handler import handle_get_security_alerts
 
         result = await handle_get_security_alerts({"time_range": "24h"})
 
         assert len(result) == 1
-        assert "sensor module not available" in result[0].text
+        assert "dashboard" in result[0].text.lower()
 
     @pytest.mark.asyncio
     async def test_get_alert_details_missing_alert_id(self):
@@ -113,14 +113,14 @@ class TestSensorHandler:
 
     @pytest.mark.asyncio
     async def test_get_alert_details_with_alert_id(self):
-        """Test get_alert_details with alert_id."""
+        """Test get_alert_details with alert_id redirects to dashboard."""
         from security_use_mcp.handlers.sensor_handler import handle_get_alert_details
 
         result = await handle_get_alert_details({"alert_id": "test-123"})
 
         assert len(result) == 1
-        # Should return module not available error (not validation error)
-        assert "sensor module not available" in result[0].text
+        assert "test-123" in result[0].text
+        assert "dashboard" in result[0].text.lower()
 
     @pytest.mark.asyncio
     async def test_acknowledge_alert_missing_alert_id(self):
@@ -146,7 +146,7 @@ class TestSensorHandler:
 
     @pytest.mark.asyncio
     async def test_block_ip_with_ip_address(self):
-        """Test block_ip with ip_address provided."""
+        """Test block_ip with ip_address redirects to dashboard."""
         from security_use_mcp.handlers.sensor_handler import handle_block_ip
 
         result = await handle_block_ip({
@@ -155,37 +155,101 @@ class TestSensorHandler:
         })
 
         assert len(result) == 1
-        assert "sensor module not available" in result[0].text
+        assert "192.168.1.100" in result[0].text
+        assert "dashboard" in result[0].text.lower()
 
     @pytest.mark.asyncio
     async def test_get_blocked_ips(self):
-        """Test get_blocked_ips handler."""
+        """Test get_blocked_ips redirects to dashboard."""
         from security_use_mcp.handlers.sensor_handler import handle_get_blocked_ips
 
         result = await handle_get_blocked_ips({})
 
         assert len(result) == 1
-        assert "sensor module not available" in result[0].text
+        assert "dashboard" in result[0].text.lower()
 
     @pytest.mark.asyncio
-    async def test_configure_sensor_no_params(self):
-        """Test configure_sensor with no parameters."""
+    async def test_configure_sensor_generates_config(self):
+        """Test configure_sensor generates framework config."""
         from security_use_mcp.handlers.sensor_handler import handle_configure_sensor
 
         result = await handle_configure_sensor({})
 
         assert len(result) == 1
-        assert "At least one configuration parameter is required" in result[0].text
+        assert "SecurityMiddleware" in result[0].text
 
     @pytest.mark.asyncio
-    async def test_configure_sensor_with_sensitivity(self):
-        """Test configure_sensor with sensitivity parameter."""
+    async def test_configure_sensor_with_framework(self):
+        """Test configure_sensor with framework parameter."""
         from security_use_mcp.handlers.sensor_handler import handle_configure_sensor
 
-        result = await handle_configure_sensor({"sensitivity": "high"})
+        result = await handle_configure_sensor({"framework": "flask"})
 
         assert len(result) == 1
-        assert "sensor module not available" in result[0].text
+        assert "Flask" in result[0].text
+
+    @pytest.mark.asyncio
+    async def test_detect_vulnerable_endpoints_invalid_path(self):
+        """Test detect_vulnerable_endpoints with invalid path."""
+        from security_use_mcp.handlers.sensor_handler import handle_detect_vulnerable_endpoints
+
+        result = await handle_detect_vulnerable_endpoints({"path": "/nonexistent"})
+
+        assert len(result) == 1
+        assert "Path does not exist" in result[0].text
+
+    @pytest.mark.asyncio
+    async def test_analyze_request_missing_method(self):
+        """Test analyze_request with missing method."""
+        from security_use_mcp.handlers.sensor_handler import handle_analyze_request
+
+        result = await handle_analyze_request({"path": "/api/test"})
+
+        assert len(result) == 1
+        assert "method" in result[0].text
+        assert "required" in result[0].text
+
+    @pytest.mark.asyncio
+    async def test_analyze_request_missing_path(self):
+        """Test analyze_request with missing path."""
+        from security_use_mcp.handlers.sensor_handler import handle_analyze_request
+
+        result = await handle_analyze_request({"method": "GET"})
+
+        assert len(result) == 1
+        assert "path" in result[0].text
+        assert "required" in result[0].text
+
+    @pytest.mark.asyncio
+    async def test_get_sensor_config_fastapi(self):
+        """Test get_sensor_config for FastAPI."""
+        from security_use_mcp.handlers.sensor_handler import handle_get_sensor_config
+
+        result = await handle_get_sensor_config({"framework": "fastapi"})
+
+        assert len(result) == 1
+        assert "FastAPI" in result[0].text
+        assert "SecurityMiddleware" in result[0].text
+
+    @pytest.mark.asyncio
+    async def test_get_sensor_config_flask(self):
+        """Test get_sensor_config for Flask."""
+        from security_use_mcp.handlers.sensor_handler import handle_get_sensor_config
+
+        result = await handle_get_sensor_config({"framework": "flask"})
+
+        assert len(result) == 1
+        assert "Flask" in result[0].text
+
+    @pytest.mark.asyncio
+    async def test_get_sensor_config_invalid_framework(self):
+        """Test get_sensor_config with invalid framework."""
+        from security_use_mcp.handlers.sensor_handler import handle_get_sensor_config
+
+        result = await handle_get_sensor_config({"framework": "django"})
+
+        assert len(result) == 1
+        assert "Invalid framework" in result[0].text
 
 
 class TestSBOMHandler:
@@ -294,14 +358,18 @@ class TestComplianceHandler:
         """Test compliance check accepts all valid frameworks."""
         from security_use_mcp.handlers.compliance_handler import handle_check_compliance
 
-        frameworks = ["soc2", "hipaa", "pci-dss", "cis"]
+        frameworks = [
+            "soc2", "hipaa", "pci-dss", "nist-800-53",
+            "cis-aws", "cis-azure", "cis-gcp", "cis-kubernetes", "iso-27001",
+            "cis", "nist", "iso",  # Aliases
+        ]
 
         for framework in frameworks:
             with patch("os.path.exists", return_value=True):
                 result = await handle_check_compliance({"framework": framework})
 
             assert len(result) == 1
-            # Should not hit validation error, only module not available
+            # Should not hit validation error
             assert "Invalid framework" not in result[0].text
 
 

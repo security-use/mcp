@@ -7,11 +7,14 @@ from .iac_handler import handle_fix_iac, handle_scan_iac
 from .sbom_handler import handle_generate_sbom
 from .sensor_handler import (
     handle_acknowledge_alert,
+    handle_analyze_request,
     handle_block_ip,
     handle_configure_sensor,
+    handle_detect_vulnerable_endpoints,
     handle_get_alert_details,
     handle_get_blocked_ips,
     handle_get_security_alerts,
+    handle_get_sensor_config,
 )
 
 __all__ = [
@@ -28,4 +31,7 @@ __all__ = [
     "handle_configure_sensor",
     "handle_generate_sbom",
     "handle_check_compliance",
+    "handle_detect_vulnerable_endpoints",
+    "handle_analyze_request",
+    "handle_get_sensor_config",
 ]

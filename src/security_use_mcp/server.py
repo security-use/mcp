@@ -14,16 +14,19 @@ from mcp.types import TextContent, Tool
 # Import handlers
 from .handlers import (
     handle_acknowledge_alert,
+    handle_analyze_request,
     handle_block_ip,
     handle_check_compliance,
     handle_configure_sensor,
     handle_create_fix_pr,
+    handle_detect_vulnerable_endpoints,
     handle_fix_iac,
     handle_fix_vulnerability,
     handle_generate_sbom,
     handle_get_alert_details,
     handle_get_blocked_ips,
     handle_get_security_alerts,
+    handle_get_sensor_config,
     handle_scan_dependencies,
     handle_scan_iac,
 )
@@ -342,7 +345,8 @@ async def list_tools() -> list[Tool]:
             name="check_compliance",
             description=(
                 "Check project against a compliance framework. "
-                "Supports SOC 2, HIPAA, PCI-DSS, and CIS benchmarks."
+                "Scans IaC files and maps findings to compliance controls. "
+                "Supports SOC2, HIPAA, PCI-DSS, NIST 800-53, CIS, and ISO 27001."
             ),
             inputSchema={
                 "type": "object",
@@ -358,11 +362,115 @@ async def list_tools() -> list[Tool]:
                         "type": "string",
                         "description": (
                             "Compliance framework to check against. "
-                            "Options: soc2, hipaa, pci-dss, cis."
+                            "Options: soc2, hipaa, pci-dss, nist-800-53, "
+                            "cis-aws, cis-azure, cis-gcp, cis-kubernetes, iso-27001."
                         ),
                     },
                 },
                 "required": ["framework"],
+            },
+        ),
+        Tool(
+            name="detect_vulnerable_endpoints",
+            description=(
+                "Detect vulnerable API endpoints in a project. "
+                "Analyzes code to find endpoints using vulnerable packages "
+                "or high-risk code patterns."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": (
+                            "Path to the project directory. "
+                            "Defaults to current working directory."
+                        ),
+                    },
+                    "min_risk_score": {
+                        "type": "number",
+                        "description": (
+                            "Minimum risk score threshold (0.0-1.0). "
+                            "Defaults to 0.3."
+                        ),
+                    },
+                },
+                "required": [],
+            },
+        ),
+        Tool(
+            name="analyze_request",
+            description=(
+                "Analyze an HTTP request for potential attacks. "
+                "Detects SQL injection, XSS, path traversal, command injection, "
+                "and other attack patterns."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "method": {
+                        "type": "string",
+                        "description": "HTTP method (GET, POST, etc.).",
+                    },
+                    "path": {
+                        "type": "string",
+                        "description": "Request path (e.g., '/api/users').",
+                    },
+                    "query_params": {
+                        "type": "object",
+                        "description": "Query parameters as key-value pairs.",
+                    },
+                    "headers": {
+                        "type": "object",
+                        "description": "Request headers as key-value pairs.",
+                    },
+                    "body": {
+                        "type": "string",
+                        "description": "Request body content.",
+                    },
+                    "source_ip": {
+                        "type": "string",
+                        "description": "Source IP address of the request.",
+                    },
+                },
+                "required": ["method", "path"],
+            },
+        ),
+        Tool(
+            name="get_sensor_config",
+            description=(
+                "Generate sensor configuration for framework integration. "
+                "Creates code snippets for adding SecurityMiddleware to "
+                "FastAPI or Flask applications."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "framework": {
+                        "type": "string",
+                        "description": (
+                            "Target framework (fastapi, flask). "
+                            "Defaults to fastapi."
+                        ),
+                    },
+                    "block_on_detection": {
+                        "type": "boolean",
+                        "description": (
+                            "Whether to block malicious requests. "
+                            "Defaults to true."
+                        ),
+                    },
+                    "watch_paths": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Specific paths to monitor.",
+                    },
+                    "api_key": {
+                        "type": "string",
+                        "description": "Dashboard API key for alerting.",
+                    },
+                },
+                "required": [],
             },
         ),
     ]
@@ -385,6 +493,9 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
         "configure_sensor": handle_configure_sensor,
         "generate_sbom": handle_generate_sbom,
         "check_compliance": handle_check_compliance,
+        "detect_vulnerable_endpoints": handle_detect_vulnerable_endpoints,
+        "analyze_request": handle_analyze_request,
+        "get_sensor_config": handle_get_sensor_config,
     }
 
     handler = handlers.get(name)

@@ -4,38 +4,86 @@ An MCP (Model Context Protocol) server that gives AI assistants like Cursor, Cla
 
 ## What It Does
 
-This MCP server exposes four powerful security tools to your AI assistant:
+This MCP server exposes powerful security tools to your AI assistant:
+
+### Core Security Tools
 
 | Tool | Description |
 |------|-------------|
-| `scan_dependencies` | Scans your project's dependencies (requirements.txt, package.json, pyproject.toml, etc.) for known vulnerabilities using the OSV database |
-| `scan_iac` | Scans Infrastructure as Code files (Terraform, CloudFormation) for security misconfigurations |
+| `scan_dependencies` | Scans your project's dependencies for known vulnerabilities using the OSV database |
+| `scan_iac` | Scans Infrastructure as Code files for security misconfigurations |
 | `fix_vulnerability` | Automatically updates vulnerable packages to secure versions |
 | `fix_iac` | Generates and applies fixes for IaC security issues |
+
+### SBOM & Compliance Tools
+
+| Tool | Description |
+|------|-------------|
+| `generate_sbom` | Generate Software Bill of Materials in CycloneDX or SPDX format |
+| `check_compliance` | Check against SOC2, HIPAA, PCI-DSS, NIST 800-53, CIS, and ISO 27001 |
+
+### Runtime Security Tools
+
+| Tool | Description |
+|------|-------------|
+| `detect_vulnerable_endpoints` | Find API endpoints using vulnerable packages |
+| `analyze_request` | Analyze HTTP requests for SQL injection, XSS, and other attacks |
+| `get_sensor_config` | Generate SecurityMiddleware configuration for FastAPI/Flask |
+
+### GitHub Integration
+
+| Tool | Description |
+|------|-------------|
+| `create_fix_pr` | Create a GitHub PR with security fixes |
 
 ## Supported Formats
 
 ### Dependency Scanning
-- Python: `requirements.txt`, `pyproject.toml`, `Pipfile`, `Pipfile.lock`, `poetry.lock`, `setup.py`
-- JavaScript/Node.js: `package.json`, `package-lock.json`
-- Java: `pom.xml`
+- **Python**: `requirements.txt`, `pyproject.toml`, `Pipfile`, `Pipfile.lock`, `poetry.lock`, `setup.py`
+- **JavaScript/Node.js**: `package.json`, `package-lock.json`, `yarn.lock`
+- **Java**: `pom.xml`, `build.gradle`
+- **.NET**: `csproj`, `packages.config`
+- **PHP**: `composer.json`, `composer.lock`
+- **Conda**: `environment.yml`
 
 ### Infrastructure as Code
-- Terraform (`.tf` files)
-- AWS CloudFormation (`.yaml`, `.yml`, `.json`)
-- AWS SAM templates
-- AWS CDK synthesized output
+- **Terraform** (`.tf` files)
+- **AWS CloudFormation** (`.yaml`, `.yml`, `.json`)
+- **AWS SAM templates**
+- **AWS CDK synthesized output**
 
 ### IaC Security Rules
-The scanner checks for common AWS misconfigurations including:
-- **CKV_AWS_20**: S3 buckets with public access (CRITICAL)
-- **CKV_AWS_19**: S3 buckets without encryption (HIGH)
-- **CKV_AWS_23**: Security groups with unrestricted ingress (HIGH)
-- **CKV_AWS_16**: RDS instances without encryption (HIGH)
-- **CKV_AWS_3**: EBS volumes without encryption (HIGH)
-- **CKV_AWS_35**: CloudTrail not enabled (MEDIUM)
-- **CKV_AWS_14**: IAM users without MFA (MEDIUM)
-- **CKV_AWS_12**: VPC without flow logs (MEDIUM)
+The scanner checks for misconfigurations across multiple cloud providers:
+
+**AWS**
+- S3 buckets with public access or missing encryption
+- Security groups with unrestricted ingress
+- RDS/EBS without encryption
+- CloudTrail not enabled
+- IAM users without MFA
+
+**Azure**
+- Storage accounts with public access
+- Network security group issues
+- Key Vault misconfigurations
+
+**GCP**
+- Cloud Storage bucket permissions
+- Firewall rules
+- KMS configurations
+
+**Kubernetes**
+- Container security contexts
+- Network policies
+- RBAC configurations
+
+### Compliance Frameworks
+- **SOC 2** Type II controls
+- **HIPAA** Security Rule
+- **PCI-DSS** v4.0
+- **NIST 800-53**
+- **CIS Benchmarks** (AWS, Azure, GCP, Kubernetes)
+- **ISO 27001**
 
 ## Installation
 
@@ -109,6 +157,25 @@ Once configured, you can ask your AI assistant things like:
 - "Update django to a secure version"
 - "Fix the S3 bucket public access issue in main.tf"
 
+### Compliance Checking
+- "Check this project against SOC2 requirements"
+- "Are we compliant with HIPAA security controls?"
+- "Run a PCI-DSS compliance check on our infrastructure"
+
+### SBOM Generation
+- "Generate an SBOM for this project"
+- "Create a CycloneDX bill of materials"
+- "Generate an SPDX software inventory"
+
+### Runtime Security
+- "Find vulnerable endpoints in this Flask app"
+- "Analyze this request for SQL injection: GET /api/users?id=1' OR '1'='1"
+- "Generate security middleware config for my FastAPI app"
+
+### GitHub Integration
+- "Create a PR with these security fixes"
+- "Open a draft PR for the vulnerability fix"
+
 ## Example Output
 
 ### Dependency Scan Results
@@ -132,25 +199,50 @@ Once configured, you can ask your AI assistant things like:
 - **Fixed in**: 3.2.19
 ```
 
-### IaC Scan Results
+### Compliance Check Results
 ```
-## IaC Security Scan Results
+## Compliance Check Results
 
-**Found 2 security issues**
+**Framework**: SOC 2 Type II
+**Files Scanned**: 15
 
-### CRITICAL (1)
+### Summary
+- **Total IaC Findings**: 8
+- **Findings Mapped to SOC 2**: 6
 
-#### CKV_AWS_20: S3 bucket with public access
-- **File**: `s3.tf:15`
-- **Resource**: aws_s3_bucket.my-bucket
-- **Remediation**: Set acl to 'private'
+### CC6.1: Logical and Physical Access Controls
+- **CKV_AWS_23**: Security group allows unrestricted ingress
+  - File: `sg.tf:8`
+  - Severity: HIGH
 
-### HIGH (1)
+### CC6.6: System Operations - Encryption
+- **CKV_AWS_19**: S3 bucket without encryption
+  - File: `s3.tf:15`
+  - Severity: HIGH
+```
 
-#### CKV_AWS_23: Security group allows unrestricted ingress
-- **File**: `sg.tf:8`
-- **Resource**: aws_security_group.web
-- **Remediation**: Restrict CIDR blocks to specific IPs
+### Request Analysis Results
+```
+## Request Security Analysis
+
+**Method**: GET
+**Path**: /api/users
+**Source IP**: 192.168.1.100
+
+### ⚠️ 1 Potential Threat(s) Detected
+
+#### 🔴 SQL_INJECTION
+- **Severity**: CRITICAL
+- **Confidence**: 95%
+- **Description**: SQL injection attempt detected in query parameter
+- **Location**: query
+- **Field**: id
+- **Matched Value**: `1' OR '1'='1`
+
+### Recommendations
+1. Block this request if in production
+2. Log the source IP for monitoring
+3. Review application input validation
 ```
 
 ## Configuration Options
@@ -161,6 +253,7 @@ Once configured, you can ask your AI assistant things like:
 |----------|-------------|---------|
 | `SECURITY_USE_LOG_LEVEL` | Logging level (DEBUG, INFO, WARN, ERROR) | INFO |
 | `SECURITY_USE_CACHE_DIR` | Directory for caching vulnerability data | System temp |
+| `SECURITY_USE_API_KEY` | API key for dashboard alerting | None |
 
 Example configuration with environment variables:
 
@@ -171,7 +264,8 @@ Example configuration with environment variables:
       "command": "security-use-mcp",
       "args": [],
       "env": {
-        "SECURITY_USE_LOG_LEVEL": "DEBUG"
+        "SECURITY_USE_LOG_LEVEL": "DEBUG",
+        "SECURITY_USE_API_KEY": "your-api-key"
       }
     }
   }
@@ -186,6 +280,10 @@ Example configuration with environment variables:
 # Clone the repository
 git clone https://github.com/security-use/mcp.git
 cd mcp
+
+# Create virtual environment
+python -m venv .venv
+source .venv/bin/activate
 
 # Install with dev dependencies
 pip install -e ".[dev]"
@@ -268,17 +366,25 @@ security-use-mcp/
 │   ├── server.py          # MCP server implementation
 │   ├── models.py          # Data models for results
 │   └── handlers/          # Tool handlers
-│       ├── dependency_handler.py
-│       └── iac_handler.py
+│       ├── dependency_handler.py  # Dependency scanning/fixing
+│       ├── iac_handler.py         # IaC scanning/fixing
+│       ├── github_handler.py      # GitHub PR creation
+│       ├── sbom_handler.py        # SBOM generation
+│       ├── compliance_handler.py  # Compliance checking
+│       └── sensor_handler.py      # Runtime security tools
 └── tests/
-    ├── test_server.py     # Server tests
-    ├── test_handlers.py   # Handler unit tests
-    └── test_integration.py # Integration tests
+    ├── test_server.py         # Server tests
+    ├── test_handlers.py       # Handler unit tests
+    ├── test_new_handlers.py   # New handler tests
+    └── test_integration.py    # Integration tests
 ```
 
 The MCP server wraps the [security-use](https://github.com/security-use/security-use) Python package, which provides:
 - Dependency scanning via the OSV (Open Source Vulnerabilities) database
-- IaC scanning with configurable security rules
+- IaC scanning with configurable security rules for AWS, Azure, GCP, and Kubernetes
+- SBOM generation in CycloneDX and SPDX formats
+- Compliance framework mapping (SOC2, HIPAA, PCI-DSS, NIST, CIS, ISO 27001)
+- Runtime attack detection (SQL injection, XSS, path traversal, command injection)
 - Automated fixing capabilities
 
 ## Related Projects

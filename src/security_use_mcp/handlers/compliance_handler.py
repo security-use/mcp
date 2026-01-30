@@ -2,7 +2,6 @@
 
 import asyncio
 import os
-from pathlib import Path
 from typing import Any
 
 from mcp.types import TextContent
@@ -12,13 +11,13 @@ async def handle_check_compliance(arguments: dict[str, Any]) -> list[TextContent
     """
     Check project against a compliance framework.
 
-    Analyzes the project for compliance with security frameworks like
-    SOC 2, HIPAA, PCI-DSS, and CIS benchmarks.
+    Scans IaC files and maps findings to compliance framework controls like
+    SOC 2, HIPAA, PCI-DSS, NIST, and CIS benchmarks.
 
     Args:
         arguments: Tool arguments containing:
             - path (optional): Path to the project directory
-            - framework (required): Compliance framework (soc2, hipaa, pci-dss, cis)
+            - framework (required): Compliance framework to check against
 
     Returns:
         List of TextContent with compliance findings grouped by control
@@ -36,14 +35,29 @@ async def handle_check_compliance(arguments: dict[str, Any]) -> list[TextContent
                     "- `soc2`: SOC 2 Type II controls\n"
                     "- `hipaa`: HIPAA Security Rule\n"
                     "- `pci-dss`: PCI DSS v4.0\n"
-                    "- `cis`: CIS Benchmarks"
+                    "- `nist-800-53`: NIST 800-53\n"
+                    "- `cis-aws`: CIS AWS Benchmarks\n"
+                    "- `cis-azure`: CIS Azure Benchmarks\n"
+                    "- `cis-gcp`: CIS GCP Benchmarks\n"
+                    "- `cis-kubernetes`: CIS Kubernetes Benchmarks\n"
+                    "- `iso-27001`: ISO 27001"
                 ),
             )
         ]
 
-    # Validate framework
-    valid_frameworks = ["soc2", "hipaa", "pci-dss", "cis"]
-    if framework.lower() not in valid_frameworks:
+    # Validate framework - map common names to full names
+    framework_aliases = {
+        "cis": "cis-aws",  # Default CIS to AWS
+        "nist": "nist-800-53",
+        "iso": "iso-27001",
+    }
+    normalized_framework = framework_aliases.get(framework.lower(), framework.lower())
+
+    valid_frameworks = [
+        "soc2", "hipaa", "pci-dss", "nist-800-53",
+        "cis-aws", "cis-azure", "cis-gcp", "cis-kubernetes", "iso-27001"
+    ]
+    if normalized_framework not in valid_frameworks:
         return [
             TextContent(
                 type="text",
@@ -59,116 +73,139 @@ async def handle_check_compliance(arguments: dict[str, Any]) -> list[TextContent
         return [TextContent(type="text", text=f"Error: Path does not exist: {path}")]
 
     try:
-        from security_use.compliance import ComplianceChecker
+        from security_use import scan_iac
+        from security_use.compliance import ComplianceFramework, ComplianceMapper
 
-        checker = ComplianceChecker()
-        result = await asyncio.to_thread(
-            checker.check,
-            path=Path(path),
-            framework=framework.lower(),
+        # Map string to enum
+        framework_enum_map = {
+            "soc2": ComplianceFramework.SOC2,
+            "hipaa": ComplianceFramework.HIPAA,
+            "pci-dss": ComplianceFramework.PCI_DSS,
+            "nist-800-53": ComplianceFramework.NIST_800_53,
+            "cis-aws": ComplianceFramework.CIS_AWS,
+            "cis-azure": ComplianceFramework.CIS_AZURE,
+            "cis-gcp": ComplianceFramework.CIS_GCP,
+            "cis-kubernetes": ComplianceFramework.CIS_K8S,
+            "iso-27001": ComplianceFramework.ISO_27001,
+        }
+        framework_enum = framework_enum_map.get(normalized_framework)
+
+        # First, scan IaC files
+        scan_result = await asyncio.to_thread(scan_iac, path=str(path))
+
+        if scan_result.errors:
+            error_msg = "; ".join(scan_result.errors)
+            return [TextContent(type="text", text=f"Scan error: {error_msg}")]
+
+        # Map findings to compliance framework
+        mapper = ComplianceMapper()
+        compliance_findings = []
+
+        for finding in scan_result.iac_findings:
+            enriched = mapper.enrich_finding(finding)
+            compliance_findings.append(enriched)
+
+        # Filter by framework
+        framework_findings = mapper.get_findings_by_framework(
+            scan_result.iac_findings, framework_enum
         )
-
-        if result.error:
-            return [
-                TextContent(
-                    type="text",
-                    text=f"Error checking compliance: {result.error}",
-                )
-            ]
-
-        # Calculate summary statistics
-        total_controls = len(result.controls)
-        passing = sum(1 for c in result.controls if c.status == "pass")
-        failing = sum(1 for c in result.controls if c.status == "fail")
-        not_applicable = sum(1 for c in result.controls if c.status == "n/a")
 
         framework_names = {
             "soc2": "SOC 2 Type II",
             "hipaa": "HIPAA Security Rule",
             "pci-dss": "PCI DSS v4.0",
-            "cis": "CIS Benchmarks",
+            "nist-800-53": "NIST 800-53",
+            "cis-aws": "CIS AWS Benchmarks",
+            "cis-azure": "CIS Azure Benchmarks",
+            "cis-gcp": "CIS GCP Benchmarks",
+            "cis-kubernetes": "CIS Kubernetes Benchmarks",
+            "iso-27001": "ISO 27001",
         }
 
         output_lines = [
             "## Compliance Check Results",
             "",
-            f"**Framework**: {framework_names.get(framework.lower(), framework)}",
+            f"**Framework**: {framework_names.get(normalized_framework, normalized_framework)}",
             f"**Project Path**: {path}",
+            f"**Files Scanned**: {len(scan_result.scanned_files)}",
             "",
             "### Summary",
             "",
-            f"- **Total Controls**: {total_controls}",
-            f"- **Passing**: {passing} ({100*passing//total_controls if total_controls else 0}%)",
-            f"- **Failing**: {failing}",
-            f"- **Not Applicable**: {not_applicable}",
-            "",
-            "---",
+            f"- **Total IaC Findings**: {len(scan_result.iac_findings)}",
+            f"- **Findings Mapped to {framework_names.get(normalized_framework, framework)}**: "
+            f"{len(framework_findings)}",
             "",
         ]
 
-        # Group findings by control category
-        categories: dict[str, list] = {}
-        for control in result.controls:
-            category = control.category or "Uncategorized"
-            if category not in categories:
-                categories[category] = []
-            categories[category].append(control)
-
-        for category, controls in sorted(categories.items()):
-            category_failing = sum(1 for c in controls if c.status == "fail")
-            output_lines.append(
-                f"### {category} ({category_failing} failing)"
+        if not framework_findings:
+            output_lines.extend(
+                [
+                    "**Status**: No compliance issues found for this framework.",
+                    "",
+                    "Your infrastructure code appears to comply with "
+                    f"{framework_names.get(normalized_framework, framework)} requirements "
+                    "based on the scanned files.",
+                ]
             )
-            output_lines.append("")
+        else:
+            output_lines.extend(
+                [
+                    "---",
+                    "",
+                ]
+            )
 
-            for control in controls:
-                status_icon = (
-                    "✓" if control.status == "pass"
-                    else "✗" if control.status == "fail"
-                    else "—"
-                )
-                output_lines.append(
-                    f"- [{status_icon}] **{control.id}**: {control.title}"
-                )
+            # Group by control
+            controls_seen: dict[str, list] = {}
+            for finding in framework_findings:
+                mapping = mapper.get_mapping(finding.rule_id)
+                for control in mapping.controls:
+                    if control.framework == framework_enum:
+                        key = f"{control.control_id}: {control.title}"
+                        if key not in controls_seen:
+                            controls_seen[key] = []
+                        controls_seen[key].append(finding)
 
-                if control.status == "fail" and control.findings:
-                    for finding in control.findings[:3]:
-                        output_lines.append(f"  - {finding}")
-                    if len(control.findings) > 3:
-                        output_lines.append(
-                            f"  - ... and {len(control.findings) - 3} more findings"
-                        )
+            for control_key, findings in sorted(controls_seen.items()):
+                output_lines.append(f"### {control_key}")
+                output_lines.append("")
 
-            output_lines.append("")
+                for finding in findings[:5]:  # Limit to 5 findings per control
+                    output_lines.append(
+                        f"- **{finding.rule_id}**: {finding.title}"
+                    )
+                    output_lines.append(
+                        f"  - File: `{finding.file_path}:{finding.line_number}`"
+                    )
+                    output_lines.append(f"  - Severity: {finding.severity.value}")
 
-        if failing > 0:
+                if len(findings) > 5:
+                    output_lines.append(f"  - ... and {len(findings) - 5} more findings")
+
+                output_lines.append("")
+
             output_lines.extend(
                 [
                     "---",
                     "",
                     "### Remediation Guidance",
                     "",
-                    "Review the failing controls above and address the findings. "
-                    "Common remediation steps include:",
-                    "",
-                    "1. Enable encryption at rest and in transit",
-                    "2. Implement proper access controls",
-                    "3. Enable audit logging",
-                    "4. Configure network security groups",
-                    "5. Implement secrets management",
+                    "Use `fix_iac` to fix individual findings:",
+                    "```",
+                    'fix_iac(file_path="<file>", rule_id="<rule_id>", auto_apply=true)',
+                    "```",
                 ]
             )
 
         return [TextContent(type="text", text="\n".join(output_lines))]
 
-    except ImportError:
+    except ImportError as e:
         return [
             TextContent(
                 type="text",
                 text=(
-                    "Error: security-use compliance module not available.\n\n"
-                    "Please ensure the compliance feature is installed: "
-                    "pip install security-use[compliance]"
+                    f"Error: security-use compliance module not available: {e}\n\n"
+                    "Please ensure security-use is installed: pip install security-use"
                 ),
             )
         ]
