@@ -16,7 +16,8 @@ class TestInitProjectHandler:
 
         # Create a FastAPI project
         app_file = tmp_path / "main.py"
-        app_file.write_text(dedent('''
+        app_file.write_text(
+            dedent("""
             from fastapi import FastAPI
             
             app = FastAPI()
@@ -24,7 +25,8 @@ class TestInitProjectHandler:
             @app.get("/")
             def root():
                 return {"message": "Hello"}
-        '''))
+        """)
+        )
         (tmp_path / "requirements.txt").write_text("fastapi\nuvicorn")
 
         result = await handle_init_project({"path": str(tmp_path)})
@@ -40,16 +42,13 @@ class TestInitProjectHandler:
 
         # Create a FastAPI project
         app_file = tmp_path / "main.py"
-        original_content = dedent('''
+        original_content = dedent("""
             from fastapi import FastAPI
             app = FastAPI()
-        ''')
+        """)
         app_file.write_text(original_content)
 
-        result = await handle_init_project({
-            "path": str(tmp_path),
-            "dry_run": True
-        })
+        result = await handle_init_project({"path": str(tmp_path), "dry_run": True})
 
         assert len(result) == 1
         assert "Dry run" in result[0].text
@@ -81,10 +80,7 @@ class TestInitProjectHandler:
         original_content = "from fastapi import FastAPI\napp = FastAPI()"
         app_file.write_text(original_content)
 
-        result = await handle_init_project({
-            "path": str(tmp_path),
-            "inject_middleware": False
-        })
+        result = await handle_init_project({"path": str(tmp_path), "inject_middleware": False})
 
         assert len(result) == 1
 
@@ -101,10 +97,12 @@ class TestDetectProjectHandler:
         from security_use_mcp.handlers.init_handler import handle_detect_project
 
         # Create a FastAPI project
-        (tmp_path / "main.py").write_text(dedent('''
+        (tmp_path / "main.py").write_text(
+            dedent("""
             from fastapi import FastAPI
             app = FastAPI()
-        '''))
+        """)
+        )
         (tmp_path / "requirements.txt").write_text("fastapi")
 
         result = await handle_detect_project({"path": str(tmp_path)})
@@ -118,10 +116,12 @@ class TestDetectProjectHandler:
         """Test detecting a Flask project."""
         from security_use_mcp.handlers.init_handler import handle_detect_project
 
-        (tmp_path / "app.py").write_text(dedent('''
+        (tmp_path / "app.py").write_text(
+            dedent("""
             from flask import Flask
             application = Flask(__name__)
-        '''))
+        """)
+        )
 
         result = await handle_detect_project({"path": str(tmp_path)})
 

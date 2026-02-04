@@ -24,9 +24,7 @@ class TestDependencyHandler:
         )
 
         with patch("os.path.exists", return_value=True):
-            with patch(
-                "security_use_mcp.handlers.dependency_handler._scanner"
-            ) as mock_scanner:
+            with patch("security_use_mcp.handlers.dependency_handler._scanner") as mock_scanner:
                 mock_scanner.scan_path = MagicMock(return_value=mock_result)
 
                 result = await handle_scan_dependencies({"path": "/test/path"})
@@ -59,9 +57,7 @@ class TestDependencyHandler:
         )
 
         with patch("os.path.exists", return_value=True):
-            with patch(
-                "security_use_mcp.handlers.dependency_handler._scanner"
-            ) as mock_scanner:
+            with patch("security_use_mcp.handlers.dependency_handler._scanner") as mock_scanner:
                 mock_scanner.scan_path = MagicMock(return_value=mock_result)
 
                 result = await handle_scan_dependencies({"path": "/test/path"})
@@ -84,17 +80,17 @@ class TestDependencyHandler:
         )
 
         with patch("os.path.exists", return_value=True):
-            with patch(
-                "security_use.fixers.dependency_fixer.DependencyFixer"
-            ) as mock_fixer_cls:
+            with patch("security_use.fixers.dependency_fixer.DependencyFixer") as mock_fixer_cls:
                 mock_fixer_instance = MagicMock()
                 mock_fixer_instance.fix = MagicMock(return_value=mock_result)
                 mock_fixer_cls.return_value = mock_fixer_instance
 
-                result = await handle_fix_vulnerability({
-                    "package_name": "requests",
-                    "path": "/test/path",
-                })
+                result = await handle_fix_vulnerability(
+                    {
+                        "package_name": "requests",
+                        "path": "/test/path",
+                    }
+                )
 
                 assert len(result) == 1
                 # Check for success indicators
@@ -188,11 +184,13 @@ class TestIaCHandler:
                 mock_fixer_instance.fix = MagicMock(return_value=mock_result)
                 mock_fixer_cls.return_value = mock_fixer_instance
 
-                result = await handle_fix_iac({
-                    "file_path": "s3.tf",
-                    "rule_id": "S3_PUBLIC_ACCESS",
-                    "auto_apply": False,
-                })
+                result = await handle_fix_iac(
+                    {
+                        "file_path": "s3.tf",
+                        "rule_id": "S3_PUBLIC_ACCESS",
+                        "auto_apply": False,
+                    }
+                )
 
                 assert len(result) == 1
                 assert "Suggested" in result[0].text
@@ -216,11 +214,13 @@ class TestIaCHandler:
                 mock_fixer_instance.fix = MagicMock(return_value=mock_result)
                 mock_fixer_cls.return_value = mock_fixer_instance
 
-                result = await handle_fix_iac({
-                    "file_path": "s3.tf",
-                    "rule_id": "S3_PUBLIC_ACCESS",
-                    "auto_apply": True,
-                })
+                result = await handle_fix_iac(
+                    {
+                        "file_path": "s3.tf",
+                        "rule_id": "S3_PUBLIC_ACCESS",
+                        "auto_apply": True,
+                    }
+                )
 
                 assert len(result) == 1
                 assert "Applied" in result[0].text

@@ -100,10 +100,8 @@ async def handle_scan_iac(arguments: dict[str, Any]) -> list[TextContent]:
                 output_lines.append(f"#### {finding.rule_id}: {finding.title}")
                 output_lines.append(f"- **File**: `{finding.file_path}:{finding.line_number}`")
                 if finding.resource_name:
-                    resource_type = finding.resource_type or 'resource'
-                    output_lines.append(
-                        f"- **Resource**: {resource_type}.{finding.resource_name}"
-                    )
+                    resource_type = finding.resource_type or "resource"
+                    output_lines.append(f"- **Resource**: {resource_type}.{finding.resource_name}")
                 output_lines.append(f"- **Description**: {finding.description}")
                 output_lines.append(f"- **Remediation**: {finding.remediation}")
                 if finding.fix_code:
@@ -192,6 +190,7 @@ async def handle_fix_iac(arguments: dict[str, Any]) -> list[TextContent]:
     try:
         # Import fixer lazily
         from security_use.fixers.iac_fixer import IaCFixer
+
         _fixer = IaCFixer()
 
         result: FixResult = await asyncio.to_thread(

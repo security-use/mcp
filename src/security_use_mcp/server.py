@@ -161,8 +161,7 @@ async def list_tools() -> list[Tool]:
                     "repo": {
                         "type": "string",
                         "description": (
-                            "Repository path or owner/name. "
-                            "Defaults to current working directory."
+                            "Repository path or owner/name. Defaults to current working directory."
                         ),
                     },
                     "vulnerability_id": {
@@ -175,10 +174,7 @@ async def list_tools() -> list[Tool]:
                     },
                     "branch_name": {
                         "type": "string",
-                        "description": (
-                            "Target branch name. "
-                            "Auto-generated if not specified."
-                        ),
+                        "description": ("Target branch name. Auto-generated if not specified."),
                     },
                     "draft": {
                         "type": "boolean",
@@ -200,8 +196,7 @@ async def list_tools() -> list[Tool]:
                     "time_range": {
                         "type": "string",
                         "description": (
-                            "Time range to query (e.g., '1h', '24h', '7d'). "
-                            "Defaults to '24h'."
+                            "Time range to query (e.g., '1h', '24h', '7d'). Defaults to '24h'."
                         ),
                     },
                     "severity": {
@@ -270,8 +265,7 @@ async def list_tools() -> list[Tool]:
                     "duration": {
                         "type": "string",
                         "description": (
-                            "Block duration (e.g., '1h', '24h', 'permanent'). "
-                            "Defaults to '24h'."
+                            "Block duration (e.g., '1h', '24h', 'permanent'). Defaults to '24h'."
                         ),
                     },
                 },
@@ -281,8 +275,7 @@ async def list_tools() -> list[Tool]:
         Tool(
             name="get_blocked_ips",
             description=(
-                "List all currently blocked IP addresses. "
-                "Shows IP, duration, and expiration time."
+                "List all currently blocked IP addresses. Shows IP, duration, and expiration time."
             ),
             inputSchema={
                 "type": "object",
@@ -328,16 +321,12 @@ async def list_tools() -> list[Tool]:
                     "path": {
                         "type": "string",
                         "description": (
-                            "Path to the project directory. "
-                            "Defaults to current working directory."
+                            "Path to the project directory. Defaults to current working directory."
                         ),
                     },
                     "format": {
                         "type": "string",
-                        "description": (
-                            "Output format (cyclonedx, spdx). "
-                            "Defaults to cyclonedx."
-                        ),
+                        "description": ("Output format (cyclonedx, spdx). Defaults to cyclonedx."),
                     },
                 },
                 "required": [],
@@ -356,8 +345,7 @@ async def list_tools() -> list[Tool]:
                     "path": {
                         "type": "string",
                         "description": (
-                            "Path to the project directory. "
-                            "Defaults to current working directory."
+                            "Path to the project directory. Defaults to current working directory."
                         ),
                     },
                     "framework": {
@@ -385,16 +373,12 @@ async def list_tools() -> list[Tool]:
                     "path": {
                         "type": "string",
                         "description": (
-                            "Path to the project directory. "
-                            "Defaults to current working directory."
+                            "Path to the project directory. Defaults to current working directory."
                         ),
                     },
                     "min_risk_score": {
                         "type": "number",
-                        "description": (
-                            "Minimum risk score threshold (0.0-1.0). "
-                            "Defaults to 0.3."
-                        ),
+                        "description": ("Minimum risk score threshold (0.0-1.0). Defaults to 0.3."),
                     },
                 },
                 "required": [],
@@ -450,17 +434,11 @@ async def list_tools() -> list[Tool]:
                 "properties": {
                     "framework": {
                         "type": "string",
-                        "description": (
-                            "Target framework (fastapi, flask). "
-                            "Defaults to fastapi."
-                        ),
+                        "description": ("Target framework (fastapi, flask). Defaults to fastapi."),
                     },
                     "block_on_detection": {
                         "type": "boolean",
-                        "description": (
-                            "Whether to block malicious requests. "
-                            "Defaults to true."
-                        ),
+                        "description": ("Whether to block malicious requests. Defaults to true."),
                     },
                     "watch_paths": {
                         "type": "array",
@@ -489,29 +467,23 @@ async def list_tools() -> list[Tool]:
                     "path": {
                         "type": "string",
                         "description": (
-                            "Path to the project directory. "
-                            "Defaults to current working directory."
+                            "Path to the project directory. Defaults to current working directory."
                         ),
                     },
                     "inject_middleware": {
                         "type": "boolean",
                         "description": (
-                            "Whether to inject SecurityMiddleware into the app. "
-                            "Defaults to true."
+                            "Whether to inject SecurityMiddleware into the app. Defaults to true."
                         ),
                     },
                     "setup_precommit": {
                         "type": "boolean",
-                        "description": (
-                            "Whether to set up pre-commit hooks. "
-                            "Defaults to true."
-                        ),
+                        "description": ("Whether to set up pre-commit hooks. Defaults to true."),
                     },
                     "dry_run": {
                         "type": "boolean",
                         "description": (
-                            "If true, preview changes without modifying files. "
-                            "Defaults to false."
+                            "If true, preview changes without modifying files. Defaults to false."
                         ),
                     },
                 },
@@ -532,8 +504,7 @@ async def list_tools() -> list[Tool]:
                     "path": {
                         "type": "string",
                         "description": (
-                            "Path to the project directory. "
-                            "Defaults to current working directory."
+                            "Path to the project directory. Defaults to current working directory."
                         ),
                     },
                 },

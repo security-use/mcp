@@ -64,9 +64,12 @@ async def handle_detect_vulnerable_endpoints(arguments: dict[str, Any]) -> list[
 
             for endpoint in result.vulnerable_endpoints[:10]:
                 risk_level = (
-                    "CRITICAL" if endpoint.risk_score >= 0.8
-                    else "HIGH" if endpoint.risk_score >= 0.6
-                    else "MEDIUM" if endpoint.risk_score >= 0.4
+                    "CRITICAL"
+                    if endpoint.risk_score >= 0.8
+                    else "HIGH"
+                    if endpoint.risk_score >= 0.6
+                    else "MEDIUM"
+                    if endpoint.risk_score >= 0.4
                     else "LOW"
                 )
                 output_lines.extend(
@@ -102,9 +105,7 @@ async def handle_detect_vulnerable_endpoints(arguments: dict[str, Any]) -> list[
                 output_lines.append(f"- `{p}`")
 
             if len(result.vulnerable_paths) > 20:
-                output_lines.append(
-                    f"- ... and {len(result.vulnerable_paths) - 20} more"
-                )
+                output_lines.append(f"- ... and {len(result.vulnerable_paths) - 20} more")
             output_lines.append("")
 
         if not result.vulnerable_endpoints:
@@ -180,8 +181,11 @@ async def handle_analyze_request(arguments: dict[str, Any]) -> list[TextContent]
 
         detector = AttackDetector(
             enabled_detectors=[
-                "sqli", "xss", "path_traversal",
-                "command_injection", "suspicious_headers"
+                "sqli",
+                "xss",
+                "path_traversal",
+                "command_injection",
+                "suspicious_headers",
             ]
         )
 
@@ -223,9 +227,12 @@ async def handle_analyze_request(arguments: dict[str, Any]) -> list[TextContent]
 
             for event in events:
                 severity_icon = (
-                    "🔴" if event.severity == "CRITICAL"
-                    else "🟠" if event.severity == "HIGH"
-                    else "🟡" if event.severity == "MEDIUM"
+                    "🔴"
+                    if event.severity == "CRITICAL"
+                    else "🟠"
+                    if event.severity == "HIGH"
+                    else "🟡"
+                    if event.severity == "MEDIUM"
                     else "🟢"
                 )
                 output_lines.extend(
@@ -238,9 +245,7 @@ async def handle_analyze_request(arguments: dict[str, Any]) -> list[TextContent]
                     ]
                 )
                 if event.matched_pattern.field:
-                    output_lines.append(
-                        f"- **Field**: {event.matched_pattern.field}"
-                    )
+                    output_lines.append(f"- **Field**: {event.matched_pattern.field}")
                 if event.matched_pattern.matched_value:
                     output_lines.append(
                         f"- **Matched Value**: `{event.matched_pattern.matched_value[:100]}`"
@@ -330,17 +335,17 @@ app.add_middleware(
     enabled_detectors=["sqli", "xss", "path_traversal", "command_injection"],'''
 
         if watch_paths:
-            code += f'''
-    watch_paths={watch_paths},'''
+            code += f"""
+    watch_paths={watch_paths},"""
 
-        code += '''
+        code += """
     excluded_paths=["/health", "/metrics"],
 )
 
 # Your routes here
 @app.get("/")
 async def root():
-    return {"message": "Protected by SecurityUse"}'''
+    return {"message": "Protected by SecurityUse"}"""
 
         output_lines.extend(
             [

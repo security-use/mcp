@@ -74,9 +74,7 @@ async def handle_create_fix_pr(arguments: dict[str, Any]) -> list[TextContent]:
             ]
 
         # Get the list of changed files
-        changed_files = [
-            line[3:] for line in status_result.stdout.strip().split("\n") if line
-        ]
+        changed_files = [line[3:] for line in status_result.stdout.strip().split("\n") if line]
 
         # Generate branch name if not provided
         if not branch_name:
@@ -86,6 +84,7 @@ async def handle_create_fix_pr(arguments: dict[str, Any]) -> list[TextContent]:
                 branch_name = f"security-fix/{iac_finding_id.lower().replace(':', '-')}"
             else:
                 import time
+
                 branch_name = f"security-fix/{int(time.time())}"
 
         # Create and checkout new branch
@@ -135,7 +134,7 @@ This PR addresses a security vulnerability.
 - **ID**: {vulnerability_id}
 
 ### Changed Files
-{chr(10).join(f'- `{f}`' for f in changed_files)}
+{chr(10).join(f"- `{f}`" for f in changed_files)}
 
 ### Testing
 - [ ] Verify the fix resolves the vulnerability
@@ -155,7 +154,7 @@ This PR addresses an infrastructure-as-code security misconfiguration.
 - **Rule ID**: {iac_finding_id}
 
 ### Changed Files
-{chr(10).join(f'- `{f}`' for f in changed_files)}
+{chr(10).join(f"- `{f}`" for f in changed_files)}
 
 ### Testing
 - [ ] Run `terraform plan` or equivalent to verify changes
@@ -172,7 +171,7 @@ This PR addresses an infrastructure-as-code security misconfiguration.
 This PR contains security fixes.
 
 ### Changed Files
-{chr(10).join(f'- `{f}`' for f in changed_files)}
+{chr(10).join(f"- `{f}`" for f in changed_files)}
 
 ### Testing
 - [ ] Verify fixes resolve the security issues

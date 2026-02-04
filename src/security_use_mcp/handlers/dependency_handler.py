@@ -85,9 +85,7 @@ async def handle_scan_dependencies(arguments: dict[str, Any]) -> list[TextConten
                 output_lines.append(f"- **ID**: {vuln.id}")
                 output_lines.append(f"- **Title**: {vuln.title}")
                 output_lines.append(f"- **Affected versions**: {vuln.affected_versions or 'N/A'}")
-                output_lines.append(
-                    f"- **Fixed in**: {vuln.fixed_version or 'No fix available'}"
-                )
+                output_lines.append(f"- **Fixed in**: {vuln.fixed_version or 'No fix available'}")
                 output_lines.append(f"- **Description**: {vuln.description}")
                 if vuln.references:
                     output_lines.append(f"- **References**: {', '.join(vuln.references[:3])}")
@@ -154,6 +152,7 @@ async def handle_fix_vulnerability(arguments: dict[str, Any]) -> list[TextConten
     try:
         # Import fixer lazily
         from security_use.fixers.dependency_fixer import DependencyFixer
+
         _fixer = DependencyFixer()
 
         result: FixResult = await asyncio.to_thread(

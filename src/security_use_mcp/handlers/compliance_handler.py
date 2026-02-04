@@ -54,8 +54,15 @@ async def handle_check_compliance(arguments: dict[str, Any]) -> list[TextContent
     normalized_framework = framework_aliases.get(framework.lower(), framework.lower())
 
     valid_frameworks = [
-        "soc2", "hipaa", "pci-dss", "nist-800-53",
-        "cis-aws", "cis-azure", "cis-gcp", "cis-kubernetes", "iso-27001"
+        "soc2",
+        "hipaa",
+        "pci-dss",
+        "nist-800-53",
+        "cis-aws",
+        "cis-azure",
+        "cis-gcp",
+        "cis-kubernetes",
+        "iso-27001",
     ]
     if normalized_framework not in valid_frameworks:
         return [
@@ -171,12 +178,8 @@ async def handle_check_compliance(arguments: dict[str, Any]) -> list[TextContent
                 output_lines.append("")
 
                 for finding in findings[:5]:  # Limit to 5 findings per control
-                    output_lines.append(
-                        f"- **{finding.rule_id}**: {finding.title}"
-                    )
-                    output_lines.append(
-                        f"  - File: `{finding.file_path}:{finding.line_number}`"
-                    )
+                    output_lines.append(f"- **{finding.rule_id}**: {finding.title}")
+                    output_lines.append(f"  - File: `{finding.file_path}:{finding.line_number}`")
                     output_lines.append(f"  - Severity: {finding.severity.value}")
 
                 if len(findings) > 5:

@@ -28,6 +28,7 @@ class TestGitHubHandler:
         from security_use_mcp.handlers.github_handler import handle_create_fix_pr
 
         with patch("subprocess.run") as mock_run:
+
             def side_effect(args, **kwargs):
                 if args[1] == "rev-parse":
                     return MagicMock(returncode=0, stdout="true", stderr="")
@@ -78,9 +79,7 @@ class TestGitHubHandler:
 
             mock_run.side_effect = side_effect
 
-            result = await handle_create_fix_pr({
-                "vulnerability_id": "CVE-2023-12345"
-            })
+            result = await handle_create_fix_pr({"vulnerability_id": "CVE-2023-12345"})
 
             assert len(result) == 1
             # Should have created a PR
@@ -149,10 +148,7 @@ class TestSensorHandler:
         """Test block_ip with ip_address redirects to dashboard."""
         from security_use_mcp.handlers.sensor_handler import handle_block_ip
 
-        result = await handle_block_ip({
-            "ip_address": "192.168.1.100",
-            "duration": "1h"
-        })
+        result = await handle_block_ip({"ip_address": "192.168.1.100", "duration": "1h"})
 
         assert len(result) == 1
         assert "192.168.1.100" in result[0].text
@@ -335,10 +331,7 @@ class TestComplianceHandler:
         """Test compliance check with invalid path."""
         from security_use_mcp.handlers.compliance_handler import handle_check_compliance
 
-        result = await handle_check_compliance({
-            "path": "/nonexistent/path",
-            "framework": "soc2"
-        })
+        result = await handle_check_compliance({"path": "/nonexistent/path", "framework": "soc2"})
 
         assert len(result) == 1
         assert "Path does not exist" in result[0].text
@@ -361,9 +354,18 @@ class TestComplianceHandler:
         from security_use_mcp.handlers.compliance_handler import handle_check_compliance
 
         frameworks = [
-            "soc2", "hipaa", "pci-dss", "nist-800-53",
-            "cis-aws", "cis-azure", "cis-gcp", "cis-kubernetes", "iso-27001",
-            "cis", "nist", "iso",  # Aliases
+            "soc2",
+            "hipaa",
+            "pci-dss",
+            "nist-800-53",
+            "cis-aws",
+            "cis-azure",
+            "cis-gcp",
+            "cis-kubernetes",
+            "iso-27001",
+            "cis",
+            "nist",
+            "iso",  # Aliases
         ]
 
         for framework in frameworks:

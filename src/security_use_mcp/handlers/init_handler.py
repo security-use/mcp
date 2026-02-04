@@ -65,12 +65,14 @@ async def handle_init_project(arguments: dict[str, Any]) -> list[TextContent]:
             output_lines.append("")
 
         # Detection results
-        output_lines.extend([
-            "### Detection",
-            "",
-            f"- **Framework**: {info.framework.value.title()}",
-            f"- **App File**: {info.primary_app.path.name if info.primary_app else 'Not found'}",
-        ])
+        output_lines.extend(
+            [
+                "### Detection",
+                "",
+                f"- **Framework**: {info.framework.value.title()}",
+                f"- **App File**: {info.primary_app.path.name if info.primary_app else 'Not found'}",
+            ]
+        )
 
         if info.primary_app and info.primary_app.has_middleware:
             output_lines.append("  - SecurityMiddleware already present")
@@ -83,7 +85,9 @@ async def handle_init_project(arguments: dict[str, Any]) -> list[TextContent]:
         if info.has_pipfile:
             dep_files.append("Pipfile")
 
-        output_lines.append(f"- **Dependencies**: {', '.join(dep_files) if dep_files else 'None found'}")
+        output_lines.append(
+            f"- **Dependencies**: {', '.join(dep_files) if dep_files else 'None found'}"
+        )
 
         iac_types = []
         if info.has_terraform:
@@ -95,47 +99,53 @@ async def handle_init_project(arguments: dict[str, Any]) -> list[TextContent]:
         output_lines.append("")
 
         # Actions taken
-        output_lines.extend([
-            "### Actions",
-            "",
-        ])
+        output_lines.extend(
+            [
+                "### Actions",
+                "",
+            ]
+        )
 
         # Config
-        if results['config']['success']:
+        if results["config"]["success"]:
             output_lines.append(f"✓ {results['config']['message']}")
-        elif results['config']['message']:
+        elif results["config"]["message"]:
             output_lines.append(f"○ {results['config']['message']}")
 
         # Middleware
-        if results['middleware']['success']:
+        if results["middleware"]["success"]:
             output_lines.append(f"✓ {results['middleware']['message']}")
-        elif results['middleware']['message']:
+        elif results["middleware"]["message"]:
             output_lines.append(f"○ {results['middleware']['message']}")
 
         # Pre-commit
-        if results['precommit']['success']:
+        if results["precommit"]["success"]:
             output_lines.append(f"✓ {results['precommit']['message']}")
-        elif results['precommit']['message']:
+        elif results["precommit"]["message"]:
             output_lines.append(f"○ {results['precommit']['message']}")
 
         output_lines.append("")
 
         # Next steps
-        output_lines.extend([
-            "### Next Steps",
-            "",
-            "1. Run `security-use auth login` to connect to the dashboard",
-            "2. Run `security-use scan all .` to perform your first scan",
-            "3. Run `pip install pre-commit && pre-commit install` to enable git hooks",
-        ])
+        output_lines.extend(
+            [
+                "### Next Steps",
+                "",
+                "1. Run `security-use auth login` to connect to the dashboard",
+                "2. Run `security-use scan all .` to perform your first scan",
+                "3. Run `pip install pre-commit && pre-commit install` to enable git hooks",
+            ]
+        )
 
         return [TextContent(type="text", text="\n".join(output_lines))]
 
     except ImportError as e:
-        return [TextContent(
-            type="text",
-            text=f"Error: security-use package not properly installed. Please run: pip install security-use\n\nDetails: {e}"
-        )]
+        return [
+            TextContent(
+                type="text",
+                text=f"Error: security-use package not properly installed. Please run: pip install security-use\n\nDetails: {e}",
+            )
+        ]
     except Exception as e:
         return [TextContent(type="text", text=f"Initialization error: {e}")]
 
@@ -192,7 +202,9 @@ async def handle_detect_project(arguments: dict[str, Any]) -> list[TextContent]:
             output_lines.append(f"- **App Files Found**: {len(info.app_files)}")
             for app in info.app_files:
                 middleware_status = " (has middleware)" if app.has_middleware else ""
-                output_lines.append(f"  - `{app.path.name}` - {app.framework.value}{middleware_status}")
+                output_lines.append(
+                    f"  - `{app.path.name}` - {app.framework.value}{middleware_status}"
+                )
 
         output_lines.append("")
         output_lines.append("### Dependencies")
@@ -228,16 +240,24 @@ async def handle_detect_project(arguments: dict[str, Any]) -> list[TextContent]:
         output_lines.append("")
         output_lines.append("### Existing Configuration")
         output_lines.append("")
-        output_lines.append(f"- **security-use config**: {'✓ Present' if info.has_security_use_config else '✗ Not found'}")
-        output_lines.append(f"- **pre-commit hooks**: {'✓ Present' if info.has_pre_commit else '✗ Not found'}")
-        output_lines.append(f"- **Dockerfile**: {'✓ Present' if info.has_dockerfile else '✗ Not found'}")
+        output_lines.append(
+            f"- **security-use config**: {'✓ Present' if info.has_security_use_config else '✗ Not found'}"
+        )
+        output_lines.append(
+            f"- **pre-commit hooks**: {'✓ Present' if info.has_pre_commit else '✗ Not found'}"
+        )
+        output_lines.append(
+            f"- **Dockerfile**: {'✓ Present' if info.has_dockerfile else '✗ Not found'}"
+        )
 
         return [TextContent(type="text", text="\n".join(output_lines))]
 
     except ImportError as e:
-        return [TextContent(
-            type="text",
-            text=f"Error: security-use package not properly installed. Please run: pip install security-use\n\nDetails: {e}"
-        )]
+        return [
+            TextContent(
+                type="text",
+                text=f"Error: security-use package not properly installed. Please run: pip install security-use\n\nDetails: {e}",
+            )
+        ]
     except Exception as e:
         return [TextContent(type="text", text=f"Detection error: {e}")]
