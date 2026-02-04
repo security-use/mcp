@@ -14,7 +14,7 @@ async def handle_init_project(arguments: dict[str, Any]) -> list[TextContent]:
 
     Automatically detects the project framework (FastAPI, Flask, Django) and sets up:
     - .security-use.yaml configuration file
-    - Runtime protection middleware (for FastAPI/Flask)
+    - Runtime protection middleware (FastAPI/Flask direct injection, Django settings.py instructions)
     - Pre-commit hooks for scanning
 
     Args:
