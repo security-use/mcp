@@ -14,7 +14,7 @@ async def handle_init_project(arguments: dict[str, Any]) -> list[TextContent]:
 
     Automatically detects the project framework (FastAPI, Flask, Django) and sets up:
     - .security-use.yaml configuration file
-    - Runtime protection middleware (FastAPI/Flask direct injection, Django settings.py instructions)
+    - Runtime protection middleware (FastAPI/Flask injection, Django instructions)
     - Pre-commit hooks for scanning
 
     Args:
@@ -38,7 +38,7 @@ async def handle_init_project(arguments: dict[str, Any]) -> list[TextContent]:
 
     try:
         # Import here to avoid circular imports and ensure security-use is available
-        from security_use.init import ProjectInitializer, Framework
+        from security_use.init import ProjectInitializer
 
         # Run initialization in thread pool
         def run_init():
@@ -70,7 +70,7 @@ async def handle_init_project(arguments: dict[str, Any]) -> list[TextContent]:
                 "### Detection",
                 "",
                 f"- **Framework**: {info.framework.value.title()}",
-                f"- **App File**: {info.primary_app.path.name if info.primary_app else 'Not found'}",
+                f"- **App File**: {info.primary_app.path.name if info.primary_app else 'N/A'}",
             ]
         )
 
@@ -143,7 +143,7 @@ async def handle_init_project(arguments: dict[str, Any]) -> list[TextContent]:
         return [
             TextContent(
                 type="text",
-                text=f"Error: security-use package not properly installed. Please run: pip install security-use\n\nDetails: {e}",
+                text=f"Error: security-use not installed. Run: pip install security-use\n\n{e}",
             )
         ]
     except Exception as e:
@@ -172,7 +172,7 @@ async def handle_detect_project(arguments: dict[str, Any]) -> list[TextContent]:
         return [TextContent(type="text", text=f"Error: Path does not exist: {path}")]
 
     try:
-        from security_use.init import ProjectDetector, Framework
+        from security_use.init import Framework, ProjectDetector
 
         def run_detect():
             detector = ProjectDetector(Path(path))
@@ -240,9 +240,8 @@ async def handle_detect_project(arguments: dict[str, Any]) -> list[TextContent]:
         output_lines.append("")
         output_lines.append("### Existing Configuration")
         output_lines.append("")
-        output_lines.append(
-            f"- **security-use config**: {'✓ Present' if info.has_security_use_config else '✗ Not found'}"
-        )
+        config_status = "✓ Present" if info.has_security_use_config else "✗ Not found"
+        output_lines.append(f"- **security-use config**: {config_status}")
         output_lines.append(
             f"- **pre-commit hooks**: {'✓ Present' if info.has_pre_commit else '✗ Not found'}"
         )
@@ -256,7 +255,7 @@ async def handle_detect_project(arguments: dict[str, Any]) -> list[TextContent]:
         return [
             TextContent(
                 type="text",
-                text=f"Error: security-use package not properly installed. Please run: pip install security-use\n\nDetails: {e}",
+                text=f"Error: security-use not installed. Run: pip install security-use\n\n{e}",
             )
         ]
     except Exception as e:
