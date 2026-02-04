@@ -6,6 +6,13 @@ An MCP (Model Context Protocol) server that gives AI assistants like Cursor, Cla
 
 This MCP server exposes powerful security tools to your AI assistant:
 
+### Project Setup Tools
+
+| Tool | Description |
+|------|-------------|
+| `init_project` | Initialize security-use with zero config - auto-detects framework, injects middleware, sets up pre-commit hooks |
+| `detect_project` | Detect project framework and configuration without making changes |
+
 ### Core Security Tools
 
 | Tool | Description |

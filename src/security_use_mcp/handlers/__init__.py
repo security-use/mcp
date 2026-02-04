@@ -4,6 +4,7 @@ from .compliance_handler import handle_check_compliance
 from .dependency_handler import handle_fix_vulnerability, handle_scan_dependencies
 from .github_handler import handle_create_fix_pr
 from .iac_handler import handle_fix_iac, handle_scan_iac
+from .init_handler import handle_detect_project, handle_init_project
 from .sbom_handler import handle_generate_sbom
 from .sensor_handler import (
     handle_acknowledge_alert,
@@ -34,4 +35,6 @@ __all__ = [
     "handle_detect_vulnerable_endpoints",
     "handle_analyze_request",
     "handle_get_sensor_config",
+    "handle_init_project",
+    "handle_detect_project",
 ]

@@ -19,6 +19,7 @@ from .handlers import (
     handle_check_compliance,
     handle_configure_sensor,
     handle_create_fix_pr,
+    handle_detect_project,
     handle_detect_vulnerable_endpoints,
     handle_fix_iac,
     handle_fix_vulnerability,
@@ -27,6 +28,7 @@ from .handlers import (
     handle_get_blocked_ips,
     handle_get_security_alerts,
     handle_get_sensor_config,
+    handle_init_project,
     handle_scan_dependencies,
     handle_scan_iac,
 )
@@ -473,6 +475,71 @@ async def list_tools() -> list[Tool]:
                 "required": [],
             },
         ),
+        Tool(
+            name="init_project",
+            description=(
+                "Initialize security-use for a project with zero configuration. "
+                "Auto-detects the framework (FastAPI, Flask, Django) and sets up "
+                "runtime middleware, pre-commit hooks, and configuration files. "
+                "The easiest way to add security scanning to any Python project."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": (
+                            "Path to the project directory. "
+                            "Defaults to current working directory."
+                        ),
+                    },
+                    "inject_middleware": {
+                        "type": "boolean",
+                        "description": (
+                            "Whether to inject SecurityMiddleware into the app. "
+                            "Defaults to true."
+                        ),
+                    },
+                    "setup_precommit": {
+                        "type": "boolean",
+                        "description": (
+                            "Whether to set up pre-commit hooks. "
+                            "Defaults to true."
+                        ),
+                    },
+                    "dry_run": {
+                        "type": "boolean",
+                        "description": (
+                            "If true, preview changes without modifying files. "
+                            "Defaults to false."
+                        ),
+                    },
+                },
+                "required": [],
+            },
+        ),
+        Tool(
+            name="detect_project",
+            description=(
+                "Detect project framework and configuration without making changes. "
+                "Analyzes a project to identify web framework, dependency files, "
+                "IaC files, and existing security configuration. "
+                "Useful for understanding a project before initializing."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": (
+                            "Path to the project directory. "
+                            "Defaults to current working directory."
+                        ),
+                    },
+                },
+                "required": [],
+            },
+        ),
     ]
 
 
@@ -496,6 +563,8 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
         "detect_vulnerable_endpoints": handle_detect_vulnerable_endpoints,
         "analyze_request": handle_analyze_request,
         "get_sensor_config": handle_get_sensor_config,
+        "init_project": handle_init_project,
+        "detect_project": handle_detect_project,
     }
 
     handler = handlers.get(name)
