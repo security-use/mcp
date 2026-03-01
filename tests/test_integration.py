@@ -66,7 +66,9 @@ class TestDependencyScanningIntegration:
         )
 
         with patch("os.path.exists", return_value=True):
-            with patch("security_use_mcp.handlers.dependency_handler._scanner") as mock_scanner:
+            with patch(
+                "security_use_mcp.handlers.dependency_handler._scanner"
+            ) as mock_scanner:
                 mock_scanner.scan_path = MagicMock(return_value=mock_result)
 
                 result = await handle_scan_dependencies({"path": "/test/path"})
@@ -94,7 +96,9 @@ class TestDependencyScanningIntegration:
         )
 
         with patch("os.path.exists", return_value=True):
-            with patch("security_use_mcp.handlers.dependency_handler._scanner") as mock_scanner:
+            with patch(
+                "security_use_mcp.handlers.dependency_handler._scanner"
+            ) as mock_scanner:
                 mock_scanner.scan_path = MagicMock(return_value=mock_result)
 
                 result = await handle_scan_dependencies({"path": "/test/path"})
@@ -199,17 +203,17 @@ class TestFixerIntegration:
         )
 
         with patch("os.path.exists", return_value=True):
-            with patch("security_use.fixers.dependency_fixer.DependencyFixer") as mock_fixer_cls:
+            with patch(
+                "security_use.fixers.dependency_fixer.DependencyFixer"
+            ) as mock_fixer_cls:
                 mock_fixer_instance = MagicMock()
                 mock_fixer_instance.fix = MagicMock(return_value=mock_result)
                 mock_fixer_cls.return_value = mock_fixer_instance
 
-                result = await handle_fix_vulnerability(
-                    {
-                        "package_name": "nonexistent-pkg",
-                        "path": "/test/path",
-                    }
-                )
+                result = await handle_fix_vulnerability({
+                    "package_name": "nonexistent-pkg",
+                    "path": "/test/path",
+                })
 
                 assert len(result) == 1
                 assert "Failed" in result[0].text
@@ -229,12 +233,10 @@ class TestFixerIntegration:
                 mock_fixer_instance.fix = MagicMock(return_value=mock_result)
                 mock_fixer_cls.return_value = mock_fixer_instance
 
-                result = await handle_fix_iac(
-                    {
-                        "file_path": "s3.tf",
-                        "rule_id": "UNKNOWN_RULE",
-                    }
-                )
+                result = await handle_fix_iac({
+                    "file_path": "s3.tf",
+                    "rule_id": "UNKNOWN_RULE",
+                })
 
                 assert len(result) == 1
                 assert "Failed" in result[0].text
@@ -254,7 +256,9 @@ class TestEdgeCases:
         )
 
         with patch("os.path.exists", return_value=True):
-            with patch("security_use_mcp.handlers.dependency_handler._scanner") as mock_scanner:
+            with patch(
+                "security_use_mcp.handlers.dependency_handler._scanner"
+            ) as mock_scanner:
                 mock_scanner.scan_path = MagicMock(return_value=mock_result)
 
                 result = await handle_scan_dependencies({})
@@ -275,18 +279,18 @@ class TestEdgeCases:
         )
 
         with patch("os.path.exists", return_value=True):
-            with patch("security_use.fixers.dependency_fixer.DependencyFixer") as mock_fixer_cls:
+            with patch(
+                "security_use.fixers.dependency_fixer.DependencyFixer"
+            ) as mock_fixer_cls:
                 mock_fixer_instance = MagicMock()
                 mock_fixer_instance.fix = MagicMock(return_value=mock_result)
                 mock_fixer_cls.return_value = mock_fixer_instance
 
-                result = await handle_fix_vulnerability(
-                    {
-                        "package_name": "pkg",
-                        "target_version": "2.0.0",
-                        "path": "/test/path",
-                    }
-                )
+                result = await handle_fix_vulnerability({
+                    "package_name": "pkg",
+                    "target_version": "2.0.0",
+                    "path": "/test/path",
+                })
 
                 assert len(result) == 1
                 assert "2.0.0" in result[0].text
